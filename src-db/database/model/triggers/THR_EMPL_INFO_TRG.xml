@@ -1,0 +1,91 @@
+<?xml version="1.0"?>
+  <database name="TRIGGER THR_EMPL_INFO_TRG">
+    <trigger name="THR_EMPL_INFO_TRG" table="THR_EMPL_INFO" fires="after" insert="true" update="false" delete="false" foreach="row">
+      <body><![CDATA[
+ v_NextNo VARCHAR2(32);
+ v_NextNo1 VARCHAR2(32);
+  v_thremplsalary_ID VARCHAR2(32);
+  v_count NUMBER;
+
+ v_c_bp_group_id VARCHAR(32);
+
+ v_message VARCHAR(100);
+ TYPE RECORD IS REF CURSOR;
+	Cur_Group RECORD;
+  
+        
+BEGIN
+    
+    IF AD_isTriggerEnabled()='N' THEN RETURN;
+    END IF;
+    
+
+ -- Business Partner Insertion when new employee joins
+ IF (INSERTING) THEN
+
+--For limit
+FOR Cur_Group IN (SELECT c_bp_group_id FROM c_bp_group 
+			WHERE c_bp_group.value LIKE('Employee')
+				AND ad_client_id = :NEW.AD_Client_ID)
+			       LOOP
+				 v_c_bp_group_id := Cur_Group.c_bp_group_id;
+				 EXIT; 
+			     END LOOP;
+
+IF ( v_c_bp_group_id IS NULL ) THEN
+
+	-- Get next no
+      AD_Sequence_Next('c_bp_group', :NEW.AD_Client_ID, v_NextNo1) ;
+      INSERT
+    INTO c_bp_group
+      (
+        c_bp_group_id, AD_CLIENT_ID, AD_ORG_ID,
+        ISACTIVE, CREATED, CREATEDBY,
+        UPDATED, UPDATEDBY, value, name
+      )
+      VALUES
+      (
+        v_NextNo1, :NEW.AD_Client_ID, :NEW.AD_Org_ID,
+         'Y', now(),  :NEW.CREATEDBY,
+        now(), :NEW.UPDATEDBY, 'Employee','Employee'
+        
+      )
+      ;
+
+      v_c_bp_group_id := v_NextNo1;
+
+    
+END IF;
+
+ -- Get next no
+      AD_Sequence_Next('c_bpartner', :NEW.AD_Client_ID, v_NextNo) ;
+
+    INSERT
+    INTO c_bpartner
+      (
+        c_bpartner_id, AD_CLIENT_ID, AD_ORG_ID,
+        ISACTIVE, CREATED, CREATEDBY,
+        UPDATED, UPDATEDBY, value, name,isemployee,iscustomer,
+        c_bp_group_id
+      )
+      VALUES
+      (
+        v_NextNo, :NEW.AD_Client_ID, :NEW.AD_Org_ID,
+         'Y', now(),  :NEW.CREATEDBY,
+        now(), :NEW.UPDATEDBY, :NEW.documentno, :NEW.known_as , 'Y','N',v_c_bp_group_id
+        
+      )
+      ;
+	update thr_empl_info set c_bpartner_id = v_NextNo where thr_empl_info_id = :new.thr_empl_info_id;
+
+		 --Employee Salary 
+	     
+  END IF;
+
+  
+
+
+END THR_EMPL_INFO_TRG
+]]></body>
+    </trigger>
+  </database>

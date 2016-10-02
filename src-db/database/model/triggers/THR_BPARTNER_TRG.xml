@@ -1,0 +1,73 @@
+<?xml version="1.0"?>
+  <database name="TRIGGER THR_BPARTNER_TRG">
+    <trigger name="THR_BPARTNER_TRG" table="C_BPARTNER" fires="after" insert="false" update="true" delete="false" foreach="row">
+      <body><![CDATA[
+    /*************************************************************************
+    * The contents of this file are subject to the Openbravo  Public  License
+    * Version  1.1  (the  "License"),  being   the  Mozilla   Public  License
+    * Version 1.1  with a permitted attribution clause; you may not  use this
+    * file except in compliance with the License. You  may  obtain  a copy of
+    * the License at http://www.openbravo.com/legal/license.html
+    * Software distributed under the License  is  distributed  on  an "AS IS"
+    * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+    * License for the specific  language  governing  rights  and  limitations
+    * under the License.
+    * The Original Code is Openbravo ERP.
+    * The Initial Developer of the Original Code is Openbravo SLU
+    * All portions are Copyright (C) 2001-2013 Openbravo SLU
+    * All Rights Reserved.
+    * Contributor(s): Mohammad Abu Naser, Tasawr Interective.
+    ************************************************************************/ 
+  v_employeeinfo_ID VARCHAR(32); 
+  v_count NUMBER;
+ 
+   
+BEGIN
+    
+ IF AD_isTriggerEnabled()='N' THEN RETURN;
+  END IF;
+
+  IF (INSERTING) THEN
+
+   
+	     SELECT count(*)
+	     INTO v_count
+	     FROM c_bpartner
+	     WHERE c_bpartner_id=:NEW.c_bpartner_id;
+
+	     if coalesce(v_count,0)=1 then
+		 
+		if :new.isemployee='Y' then
+		--update thr_empl_info set isleaveaccount = 'Y' where thr_empl_info_id = new.thr_empl_info_id;
+
+	  v_employeeinfo_ID:=get_uuid();
+	  
+INSERT INTO thr_empl_info
+	(
+	  thr_empl_info_id,ad_client_id,ad_org_id,isactive,created,createdby,updated,updatedby,
+	  documentno,firstname,middlename,lastname,known_as,email,alternateemail,phoneno,
+	  alternatephoneno,mobileno,emergencyphoneno,ad_image_id,thr_em_department_id,
+	  thr_em_designation_id,thr_empl_pay_grade_id,salary_amount,bonus_percent,available_for,
+	  standard_hours,date_of_joining,date_of_leaving,status,description,bank_name,accountno,isleaveaccount,
+	  c_bpartner_id,name_ar,official_sponser,liability,is_applicant
+	) 
+        VALUES 
+        (
+	   v_employeeinfo_ID,:NEW.ad_client_ID,:NEW.ad_org_id,'Y',now(),:NEW.CreatedBy,now(),:new.createdBy,
+	   :new.value,:new.name,null,' ',:new.name,null,null,null,
+	   null,null,null,null,null,
+	   null,null,0.00,0,null,
+	   0,now(),null,'Permanent',null,null,null,'N',:NEW.c_bpartner_id,null,null,null,'N'
+	   
+        );
+	
+	End if ;
+	End if ;
+
+  END IF;
+  
+  -- Deleting
+END THR_BPARTNER_TRG
+]]></body>
+    </trigger>
+  </database>

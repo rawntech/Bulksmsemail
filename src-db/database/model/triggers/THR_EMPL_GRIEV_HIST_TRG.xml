@@ -1,0 +1,89 @@
+<?xml version="1.0"?>
+  <database name="TRIGGER THR_EMPL_GRIEV_HIST_TRG">
+    <trigger name="THR_EMPL_GRIEV_HIST_TRG" table="THR_EMPL_GRIEV_HIST" fires="after" insert="true" update="true" delete="false" foreach="row">
+      <body><![CDATA[
+    /*************************************************************************
+    * The contents of this file are subject to the Openbravo  Public  License
+    * Version  1.1  (the  "License"),  being   the  Mozilla   Public  License
+    * Version 1.1  with a permitted attribution clause; you may not  use this
+    * file except in compliance with the License. You  may  obtain  a copy of
+    * the License at http://www.openbravo.com/legal/license.html
+    * Software distributed under the License  is  distributed  on  an "AS IS"
+    * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+    * License for the specific  language  governing  rights  and  limitations
+    * under the License.
+    * The Original Code is Openbravo ERP.
+    * The Initial Developer of the Original Code is Openbravo SLU
+    * All portions are Copyright (C) 2001-2013 Openbravo SLU
+    * All Rights Reserved.
+    * Contributor(s): Mohammad Abu Naser, Tasawr Interective.
+    ************************************************************************/ 
+  v_thremplsalary_ID VARCHAR2(32);
+  v_count NUMBER;
+  v_day NUMBER;
+  v_count1 NUMBER;
+  CUR_PARAMETER_ACTION RECORD;
+  v_thr_emlvappl_ID VARCHAR2(32);
+  
+   
+BEGIN
+
+  IF AD_isTriggerEnabled()='N' THEN RETURN;
+  END IF;
+
+  IF ( INSERTING) THEN
+
+
+	     SELECT count(*)
+	     INTO v_count
+	     FROM thr_empl_griev_hist
+	     WHERE thr_empl_info_id=:NEW.thr_empl_info_id;
+
+	     select date_part('day',withdrawl_date-suspension_date)+1 
+	     into v_day
+	     from thr_empl_griev_hist where thr_empl_info_id=:new.thr_empl_info_id;
+
+	     if coalesce(v_count,0)=1 then
+		
+		FOR CUR_PARAMETER_ACTION IN (
+				select p.thr_empl_leave_plan_id,p.thr_empl_leave_type_id
+				from thr_empl_lp_details p,thr_empl_leave_type t
+				where p.thr_empl_leave_type_id=t.thr_empl_leave_type_id
+				and t.name='LOP'
+				)
+		loop
+
+			v_thr_emlvappl_ID=get_uuid();
+			INSERT INTO thr_em_lv_appl
+			(
+			thr_em_lv_appl_id,ad_client_id,ad_org_id,isactive,
+			created,createdby,updated,updatedby,
+			thr_empl_info_id,thr_empl_leave_plan_id,
+			thr_empl_leave_type_id,
+			fromdate ,todate,requested_days,
+			status ,description,documentno,rejected,
+			approved,leave_time_phone,leave_remaining,
+			leaveaddress,leavejoindate,ispayment
+			 )
+		values
+		(
+			v_thr_emlvappl_ID,:new.ad_client_ID,:new.ad_org_id,'Y',
+			now(),:new.CreatedBy,now(),:new.createdBy,
+			:new.thr_empl_info_id,CUR_PARAMETER_ACTION.thr_empl_leave_plan_id,
+			CUR_PARAMETER_ACTION.thr_empl_leave_type_id,
+			:new.suspension_date,:new.withdrawl_date,v_day,
+			'DR',null,(select currentnext from ad_sequence 
+			where name='DocumentNo_thr_em_lv_appl'),'N',
+			'N',null,null,
+			null,null,'N'
+		);
+		END LOOP;
+	END IF;
+END IF;
+	    
+
+  -- Deleting
+END THR_EMPL_GRIEV_HIST_TRG
+]]></body>
+    </trigger>
+  </database>

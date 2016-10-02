@@ -1,0 +1,59 @@
+<?xml version="1.0"?>
+  <database name="FUNCTION THR_GET_MONTHDAYS">
+    <function name="THR_GET_MONTHDAYS" type="NULL">
+      <parameter name="p_period_id" type="VARCHAR" mode="in">
+        <default/>
+      </parameter>
+      <parameter name="p_year" type="NUMERIC" mode="out">
+        <default/>
+      </parameter>
+      <parameter name="p_monthid" type="NUMERIC" mode="out">
+        <default/>
+      </parameter>
+      <parameter name="p_mdays" type="NUMERIC" mode="out">
+        <default/>
+      </parameter>
+      <body><![CDATA[/*************************************************************************
+* The contents of this file are subject to the Openbravo  Public  License
+* Version  1.1  (the  "License"),  being   the  Mozilla   Public  License
+* Version 1.1  with a permitted attribution clause; you may not  use this
+* file except in compliance with the License. You  may  obtain  a copy of
+* the License at http://www.openbravo.com/legal/license.html
+* Software distributed under the License  is  distributed  on  an "AS IS"
+* basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+* License for the specific  language  governing  rights  and  limitations
+* under the License.
+* The Original Code is Openbravo ERP.
+* The Initial Developer of the Original Code is Openbravo SLU
+* All portions are Copyright (C) 2009-2012 Openbravo SLU
+* All Rights Reserved.
+* Contributor(s):  ______________________________________.
+************************************************************************/
+BEGIN
+select p.periodno, y.year into  p_monthid, p_year from c_period p , c_year y
+where y.c_year_id=p.c_year_id
+--and y.ad_client_id=
+and p.c_period_id=p_period_id;
+
+			if p_monthid= 1 or p_monthid= 3 or p_monthid= 5 or p_monthid= 7 or p_monthid= 8 or p_monthid= 10 or p_monthid= 12 then
+			   p_mdays:=31;
+			  elsif p_monthid= 4 or p_monthid= 6 or p_monthid= 9 or p_monthid= 11 then
+			  	p_mdays:=30;
+			  elsif p_monthid=2 then
+			  	if mod(p_year,400)=0 then
+			  	 p_mdays:=28;
+			  	elsif mod(p_year,4)=0 then
+			  		p_mdays:=29;
+			  	else
+			  		p_mdays:=28;
+			  	end if;
+			  else
+			  p_mdays:=1;
+			  end if;
+EXCEPTION
+WHEN OTHERS THEN
+P_MDAYS=1;
+END THR_GET_MONTHDAYS
+]]></body>
+    </function>
+  </database>

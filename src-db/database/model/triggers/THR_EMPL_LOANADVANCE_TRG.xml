@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+  <database name="TRIGGER THR_EMPL_LOANADVANCE_TRG">
+    <trigger name="THR_EMPL_LOANADVANCE_TRG" table="THR_EMPL_LOANADVANCE" fires="after" insert="true" update="true" delete="false" foreach="row">
+      <body><![CDATA[
+    /*************************************************************************
+    * The contents of this file are subject to the Openbravo  Public  License
+    * Version  1.1  (the  "License"),  being   the  Mozilla   Public  License
+    * Version 1.1  with a permitted attribution clause; you may not  use this
+    * file except in compliance with the License. You  may  obtain  a copy of
+    * the License at http://www.openbravo.com/legal/license.html
+    * Software distributed under the License  is  distributed  on  an "AS IS"
+    * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+    * License for the specific  language  governing  rights  and  limitations
+    * under the License.
+    * The Original Code is Openbravo ERP.
+    * The Initial Developer of the Original Code is Openbravo SLU
+    * All portions are Copyright (C) 2001-2013 Openbravo SLU
+    * All Rights Reserved.
+    * Contributor(s): Mohammad Abu Naser, Tasawr Interective.
+    ************************************************************************/ 
+  v_emplloanschdl_ID VARCHAR2(32);
+  v_count NUMBER;
+  
+   
+BEGIN
+    
+  IF AD_isTriggerEnabled()='N' THEN RETURN;
+  END IF;
+
+  IF (INSERTING OR UPDATING) THEN
+
+     SELECT count(*)
+     INTO v_count
+     FROM thr_empl_loanadvance
+     WHERE thr_empl_loanadvance_id=:NEW.thr_empl_loanadvance_id;
+    
+     
+     IF (:new.status ='HRMA' and  :new.approved='Y') THEN
+
+	v_emplloanschdl_ID:=get_uuid();
+	INSERT INTO thr_empl_loan_schdl
+	(
+	  thr_empl_loan_schdl_id ,ad_org_id ,ad_client_id,isactive,
+	  created,createdby,updated,updatedby ,
+	  thr_empl_loan_id ,starting_date,ending_date ,
+	  loanamt,tenuremonths,
+	  scheduleprocess ,thr_empl_loanadvance_id
+	)
+        VALUES 
+        (
+	   v_emplloanschdl_ID,:new.ad_org_id,:new.ad_client_id,'Y',
+	   now(),:new.CreatedBy,now(),:new.createdBy,
+	   :NEW.thr_empl_loan_id,:NEW.starting_date,now(),
+	   :new.loanamt,:new.tenuremonths,'N',:new.thr_empl_loanadvance_id
+        );
+
+    END IF;
+  --  ELSE --v_count=1
+  --  DELETE FROM thr_empl_loan_schdl WHERE thr_empl_loanadvance_id=NEW.thr_empl_loanadvance_id;   
+END IF;
+  -- Deleting
+END THR_EMPL_LOANADVANCE_TRG
+]]></body>
+    </trigger>
+  </database>

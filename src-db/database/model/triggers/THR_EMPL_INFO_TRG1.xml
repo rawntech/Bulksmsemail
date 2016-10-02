@@ -1,0 +1,103 @@
+<?xml version="1.0"?>
+  <database name="TRIGGER THR_EMPL_INFO_TRG1">
+    <trigger name="THR_EMPL_INFO_TRG1" table="THR_EMPL_INFO" fires="after" insert="true" update="true" delete="false" foreach="row">
+      <body><![CDATA[
+    /*************************************************************************
+    * The contents of this file are subject to the Openbravo  Public  License
+    * Version  1.1  (the  "License"),  being   the  Mozilla   Public  License
+    * Version 1.1  with a permitted attribution clause; you may not  use this
+    * file except in compliance with the License. You  may  obtain  a copy of
+    * the License at http://www.openbravo.com/legal/license.html
+    * Software distributed under the License  is  distributed  on  an "AS IS"
+    * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+    * License for the specific  language  governing  rights  and  limitations
+    * under the License.
+    * The Original Code is Openbravo ERP.
+    * The Initial Developer of the Original Code is Openbravo SLU
+    * All portions are Copyright (C) 2001-2013 Openbravo SLU
+    * All Rights Reserved.
+    * Contributor(s): Mohammad Abu Naser, Tasawr Interective.
+    ************************************************************************/ 
+  v_thremplsalary_ID VARCHAR2(32);
+  v_count NUMBER;
+  v_count1 NUMBER;
+  CUR_PARAMETER_GRADEITEM RECORD;
+  v_Emdesignation_ID VARCHAR2(32);
+  v_thremplshift_ID VARCHAR2(32);
+  CUR_PARAMETER_SHIFT RECORD;
+  
+   
+BEGIN
+
+  IF AD_isTriggerEnabled()='N' THEN RETURN;
+  END IF;
+
+  IF ( INSERTING) THEN
+
+	     SELECT count(*)
+	     INTO v_count
+	     FROM thr_empl_info
+	     WHERE thr_empl_info_id=:NEW.thr_empl_info_id;
+     
+	     if coalesce(v_count,0)=1 then
+	     
+		 v_thremplsalary_ID=get_uuid();
+		  INSERT INTO thr_empl_salary
+			(thr_empl_salary_id ,ad_client_id ,ad_org_id , isactive ,
+			created ,createdby ,updated ,updatedby ,
+			processing ,processed ,thr_empl_info_id ,
+			mobileno,
+			dateofjoining ,grossamt,thr_empl_pay_grade_id )
+		values
+		(
+			v_thremplsalary_ID ,:new.ad_client_ID,:new.ad_org_id,'Y',
+			now(),:new.CreatedBy,now(),:new.createdBy,
+			'N' ,'N' ,:new.thr_empl_info_id ,:new.mobileno ,
+			:new.date_of_joining ,:new.salary_amount,:new.thr_empl_pay_grade_id
+		);
+
+		--Insert Shift
+		FOR CUR_PARAMETER_SHIFT IN (
+			select * from thr_em_sft_inf where isdefault='Y'
+			)
+			loop
+		v_thremplshift_ID=get_uuid();
+		INSERT INTO thr_empl_shift
+			(thr_empl_shift_id,ad_org_id,ad_client_id,isactive ,
+			created ,createdby ,updated ,updatedby ,
+			thr_em_sft_inf_id ,thr_empl_info_id ,start_date,
+			is_automatic_attendance,in_time,out_time,
+			working_days)
+		VALUES
+			(v_thremplshift_ID,:new.ad_org_id,:new.ad_client_id,'Y',
+			now(),:new.CreatedBy,now(),:new.createdBy,
+			CUR_PARAMETER_SHIFT.thr_em_sft_inf_id,:new.thr_empl_info_id,:new.date_of_joining,
+			'Y',CUR_PARAMETER_SHIFT.from_time,CUR_PARAMETER_SHIFT.to_time,
+			1);
+		END LOOP;
+  END IF; --Employee Salary */   
+END IF;
+
+--Insert Desgination Employee
+		IF ( UPDATING) THEN
+		--if(new.thr_em_designation_id is not null) THEN
+		v_Emdesignation_ID=get_uuid();
+		  INSERT INTO thr_em_designation_emp
+			(thr_em_designation_emp_id,ad_client_id ,ad_org_id ,isactive ,
+			created ,createdby ,updated,updatedby,
+			startdate ,thr_em_designation_id ,thr_empl_info_id
+			 )
+		values
+		(
+			v_Emdesignation_ID ,:new.ad_client_ID,:new.ad_org_id,'Y',
+			now(),:new.CreatedBy,now(),:new.createdBy,
+			:new.date_of_joining,:new.thr_em_designation_id,:new.thr_empl_info_id
+		);
+		
+		--END IF;
+		END IF;
+  -- Deleting
+END THR_EMPL_INFO_TRG1
+]]></body>
+    </trigger>
+  </database>

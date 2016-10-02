@@ -1,0 +1,110 @@
+<?xml version="1.0"?>
+  <database name="TRIGGER THR_EMPL_SALARY_TRG">
+    <trigger name="THR_EMPL_SALARY_TRG" table="THR_EMPL_SALARY" fires="after" insert="true" update="true" delete="false" foreach="row">
+      <body><![CDATA[
+    /*************************************************************************
+    * The contents of this file are subject to the Openbravo  Public  License
+    * Version  1.1  (the  "License"),  being   the  Mozilla   Public  License
+    * Version 1.1  with a permitted attribution clause; you may not  use this
+    * file except in compliance with the License. You  may  obtain  a copy of
+    * the License at http://www.openbravo.com/legal/license.html
+    * Software distributed under the License  is  distributed  on  an "AS IS"
+    * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+    * License for the specific  language  governing  rights  and  limitations
+    * under the License.
+    * The Original Code is Openbravo ERP.
+    * The Initial Developer of the Original Code is Openbravo SLU
+    * All portions are Copyright (C) 2001-2013 Openbravo SLU
+    * All Rights Reserved.
+    * Contributor(s): Mohammad Abu Naser, Tasawr Interective.
+    ************************************************************************/ 
+  v_emplpayitem_ID VARCHAR2(32);
+  v_count NUMBER;
+  va_count NUMBER;
+  v_count1 NUMBER;
+  CUR_PARAMETER_GRADEITEM RECORD;
+  CUR_PARAMETER_ISAPPLICANT RECORD;
+  CUR_PARAMETER_PAYITEM RECORD;
+  
+   
+BEGIN
+
+  IF AD_isTriggerEnabled()='N' THEN RETURN;
+  END IF;
+
+  IF ( INSERTING) THEN
+
+     SELECT count(*)
+     INTO v_count
+     FROM thr_empl_salary
+     WHERE thr_empl_salary_id=:NEW.thr_empl_salary_id;
+     
+     IF coalesce(v_count,0)=1 THEN
+     	--Applicant
+	Select count(*) into va_count from thr_applicant app 
+	WHERE app.thr_empl_info_id = :new.thr_empl_info_id;
+	
+	IF coalesce(va_count,0)=1 THEN
+
+	--insert into tmp values (va_count||'-'||v_count);
+		FOR CUR_PARAMETER_PAYITEM IN
+		(Select ap.* from thr_app_fnl_offr fn,thr_app_pay_item ap,thr_applicant aa
+		 where fn.thr_app_fnl_offr_id=ap.thr_app_fnl_offr_id
+		 and fn.thr_applicant_id=aa.thr_applicant_id
+		 and aa.thr_empl_info_id=:new.thr_empl_info_id
+		)
+		Loop
+		v_emplpayitem_ID:=get_uuid();
+		INSERT INTO thr_empl_pay_item
+		(
+		thr_empl_pay_item_id ,ad_client_id ,ad_org_id ,isactive ,
+		created ,createdby ,updated ,updatedby ,
+		thr_empl_salary_id ,thr_empl_pck_sal_item_id ,amtpermonth,
+		type ,is_fixed ,thr_empl_paycombo_id,
+		percentage,category
+		)
+		VALUES 
+		(
+		v_emplpayitem_ID,:new.ad_client_ID,:new.ad_org_id,'Y',
+		now(),:new.CreatedBy,now(),:new.createdBy,
+		:NEW.thr_empl_salary_id,CUR_PARAMETER_PAYITEM.thr_empl_pck_sal_item_id,
+		CUR_PARAMETER_PAYITEM.amtpermonth,CUR_PARAMETER_PAYITEM.type,
+		CUR_PARAMETER_PAYITEM.is_fixed,CUR_PARAMETER_PAYITEM.thr_empl_paycombo_id,
+		CUR_PARAMETER_PAYITEM.percentage,CUR_PARAMETER_PAYITEM.category
+		);
+		END LOOP;
+	--Applicant End
+	ELSIF coalesce(va_count,0)=0 THEN
+	FOR CUR_PARAMETER_GRADEITEM IN (
+		select * from thr_empl_pck_sal_item where thr_empl_pay_grade_id = :new.thr_empl_pay_grade_id
+		)
+		LOOP
+		v_emplpayitem_ID:=get_uuid();
+		
+		INSERT INTO thr_empl_pay_item
+		(
+		thr_empl_pay_item_id ,ad_client_id ,ad_org_id ,isactive ,
+		created ,createdby ,updated ,updatedby ,
+		thr_empl_salary_id ,thr_empl_pck_sal_item_id ,amtpermonth,
+		type ,is_fixed ,thr_empl_paycombo_id,
+		percentage,category
+		)
+		VALUES 
+		(
+		v_emplpayitem_ID,:new.ad_client_ID,:new.ad_org_id,'Y',
+		now(),:new.CreatedBy,now(),:new.createdBy,
+		:NEW.thr_empl_salary_id,CUR_PARAMETER_GRADEITEM.thr_empl_pck_sal_item_id,
+		CUR_PARAMETER_GRADEITEM.fixed_amount,CUR_PARAMETER_GRADEITEM.type,
+		CUR_PARAMETER_GRADEITEM.is_fixed,CUR_PARAMETER_GRADEITEM.thr_empl_paycombo_id,
+		CUR_PARAMETER_GRADEITEM.percentage,CUR_PARAMETER_GRADEITEM.category
+		);				
+	END LOOP;
+	END IF;
+   END IF;
+END IF;
+
+  -- Deleting
+END THR_EMPL_SALARY_TRG
+]]></body>
+    </trigger>
+  </database>

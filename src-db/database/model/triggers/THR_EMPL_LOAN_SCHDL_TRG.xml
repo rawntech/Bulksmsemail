@@ -1,0 +1,114 @@
+<?xml version="1.0"?>
+  <database name="TRIGGER THR_EMPL_LOAN_SCHDL_TRG">
+    <trigger name="THR_EMPL_LOAN_SCHDL_TRG" table="THR_EMPL_LOAN_SCHDL" fires="after" insert="true" update="false" delete="false" foreach="row">
+      <body><![CDATA[
+    /*************************************************************************
+    * The contents of this file are subject to the Openbravo  Public  License
+    * Version  1.1  (the  "License"),  being   the  Mozilla   Public  License
+    * Version 1.1  with a permitted attribution clause; you may not  use this
+    * file except in compliance with the License. You  may  obtain  a copy of
+    * the License at http://www.openbravo.com/legal/license.html
+    * Software distributed under the License  is  distributed  on  an "AS IS"
+    * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+    * License for the specific  language  governing  rights  and  limitations
+    * under the License.
+    * The Original Code is Openbravo ERP.
+    * The Initial Developer of the Original Code is Openbravo SLU
+    * All portions are Copyright (C) 2001-2013 Openbravo SLU
+    * All Rights Reserved.
+    * Contributor(s): Mohammad Abu Naser, Tasawr Interective.
+    ************************************************************************/ 
+	v_count NUMBER;
+       
+
+        -- Parameter-- Parameter
+	TYPE RECORD IS REF CURSOR;
+	Cur_Parameter RECORD;
+	v_NextSP_id VARCHAR(32);
+	v_startdate DATE;
+	v_date DATE;
+	v_AD_Client_ID VARCHAR(32);
+        v_AD_Org_ID VARCHAR(32);
+        v_thr_emp_loan_id VARCHAR(32);
+        
+        
+        v_tenuremonths NUMBER:=0;
+        v_loanamt NUMBER:=0;
+        v_temp NUMBER:=0;
+        v_dueamt NUMBER:=0;
+        v_cnt NUMBER:=0;
+  
+   
+BEGIN
+    
+  IF AD_isTriggerEnabled()='N' THEN RETURN;
+  END IF;
+
+  IF (INSERTING OR UPDATING) THEN
+
+       SELECT ad_client_id, ad_org_id, tenuremonths, loanamt, starting_date, thr_empl_loanadvance_id 
+		INTO v_AD_Client_ID, v_AD_Org_ID, v_tenuremonths, v_loanamt , v_startdate, v_thr_emp_loan_id
+		FROM  thr_empl_loan_schdl 
+		WHERE thr_empl_loan_schdl_id = :NEW.thr_empl_loan_schdl_id;
+
+    -- Record_ID is the Tab_ID to copy to
+  --  v_ResultStr:='Copying'; 
+   
+    v_temp := v_tenuremonths;
+
+    v_dueamt := v_loanamt/v_tenuremonths;
+
+    v_date := v_startdate;
+
+   LOOP
+
+   IF ( v_temp > 0 ) THEN
+
+	v_cnt := v_cnt + 1;
+
+	v_NextSP_id=get_uuid();
+
+    -- Get next no
+	--SELECT * INTO  v_NextSP FROM AD_Sequence_Next('thr_empl_loan_dtls', v_AD_Client_ID) ;
+    -- Insert
+	INSERT INTO thr_empl_loan_dtls
+	(
+		thr_empl_loan_dtls_id, AD_CLIENT_ID, AD_ORG_ID, ISACTIVE,
+		CREATED, CREATEDBY, UPDATED, UPDATEDBY,
+		thr_empl_loan_schdl_id, due_date, outstanding_amount, due_amount	        
+	)
+	VALUES
+	(
+		v_NextSP_id, v_AD_Client_ID, v_AD_Org_ID, 
+		'Y', now(), '0', now(), '0',
+		:NEW.thr_empl_loan_schdl_id, v_date, (v_loanamt*v_temp/v_tenuremonths), v_dueamt		
+	)
+	; 
+
+	v_temp := v_temp - 1 ;
+
+	--v_date := v_date + '1 month';
+	--Oracle compataible with Openbravo function 
+	v_date := add_months(v_date , 1);
+
+     ELSE
+
+	EXIT;
+	
+     END IF;
+     END LOOP;
+
+     UPDATE thr_empl_loan_schdl SET ending_date = v_date WHERE thr_empl_loan_schdl_id = :NEW.thr_empl_loan_schdl_id;
+
+     --UPDATE thr_empl_loanadvance SET scheduled = 'Y' WHERE thr_empl_loanadvance_id = v_thr_emp_loan_id;
+
+   -- v_Message := ' Loan Schedule Processed'; 
+
+	
+    
+END IF;
+  -- Deleting
+END THR_EMPL_LOAN_SCHDL_TRG
+]]></body>
+    </trigger>
+  </database>

@@ -1,0 +1,241 @@
+<?xml version="1.0"?>
+  <database name="TRIGGER THR_EM_LV_APPL_TRG">
+    <trigger name="THR_EM_LV_APPL_TRG" table="THR_EM_LV_APPL" fires="after" insert="true" update="true" delete="true" foreach="row">
+      <body><![CDATA[
+    /*************************************************************************
+    * The contents of this file are subject to the Openbravo  Public  License
+    * Version  1.1  (the  "License"),  being   the  Mozilla   Public  License
+    * Version 1.1  with a permitted attribution clause; you may not  use this
+    * file except in compliance with the License. You  may  obtain  a copy of
+    * the License at http://www.openbravo.com/legal/license.html
+    * Software distributed under the License  is  distributed  on  an "AS IS"
+    * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+    * License for the specific  language  governing  rights  and  limitations
+    * under the License.
+    * The Original Code is Openbravo ERP.
+    * The Initial Developer of the Original Code is Openbravo SLU
+    * All portions are Copyright (C) 2001-2013 Openbravo SLU
+    * All Rights Reserved.
+    * Contributor(s): Mohammad Abu Naser, Tasawr Interective.
+    ************************************************************************/ 
+  v_leaveappdetails_ID VARCHAR2(32);
+  v_leaveapprove_ID VARCHAR2(32);
+  v_leaveapprovedetail_ID VARCHAR2(32);
+  v_update_balance NUMBER;
+  v_count NUMBER;
+  CUR_LEAVE_BALANCE RECORD;
+ -- v_startday NUMERIC;
+ -- v_endday NUMERIC;
+  v_nod NUMBER;
+  v_leave_remaining NUMBER:=0;
+  v_thr_empl_salary VARCHAR(32); 
+  v_loanadvance_ID VARCHAR(32); 
+  v_grossamt NUMBER;
+  v_loan_type VARCHAR(32);
+  
+   
+BEGIN
+    
+  IF AD_isTriggerEnabled()='N' THEN RETURN;
+  END IF;
+
+  IF (INSERTING OR UPDATING) THEN
+
+     --  Get Unique C_YEAR_id,thr_empl_holiday_id, startdated for thr_empl_hlday_yr_id
+     SELECT count(*)
+     INTO v_count
+     FROM thr_em_lv_appl
+     WHERE thr_em_lv_appl_id=:NEW.thr_em_lv_appl_id;
+     --AND AD_Client_ID=NEW.AD_Client_ID
+     --AND AD_ORG_ID=NEW.AD_ORG_ID;
+     --AND fromdate=NEW.fromdate;
+     
+     IF (v_count<>1) THEN
+       IF (v_count=0) THEN
+
+	--New Line
+	FOR I IN 0..365 loop
+	--IF new.REPEATOPTION='1'  THEN
+	-- IF mod(I,7)>0 THEN
+	-- CONTINUE;
+	 --end if;
+	--END IF;
+
+	if :NEW.fromdate+i>:NEW.todate then
+	EXIT;  -- exit loop
+	END IF;
+
+	v_leaveappdetails_ID:=get_uuid();
+
+
+	INSERT INTO thr_em_lv_appldetails
+	(
+	  thr_em_lv_appldetails_id, ad_client_id,ad_org_id,isactive,created,createdby,updated,updatedby,thr_em_lv_appl_id,
+	  leavedate,description
+	)
+        VALUES 
+        (
+	   v_leaveappdetails_ID,:new.ad_client_ID,:new.ad_org_id,'Y',now(),:new.CreatedBy,now(),
+            :new.createdBy,:NEW.thr_em_lv_appl_id,:NEW.fromdate+i,:NEW.description
+        );
+
+      end loop;
+
+	--NULL;
+
+
+
+	
+      ELSE 
+	 RAISE_APPLICATION_ERROR(-20000, 'THR_morethanoneleaveapplication');
+     END IF;
+     Update thr_em_lv_appl set leave_remaining =CUR_LEAVE_BALANCE.leave_balance  
+		where thr_empl_info_id = :new.thr_empl_info_id
+		and thr_empl_leave_type_id = :new.thr_empl_leave_type_id;
+    ELSE --v_count=1
+    DELETE FROM thr_em_lv_appldetails WHERE thr_em_lv_appl_id=:NEW.thr_em_lv_appl_id;
+    FOR I IN 0..365 loop
+	--IF new.REPEATOPTION='1'  THEN
+	-- IF mod(I,7)>0 THEN
+	-- CONTINUE;
+	 --end if;
+	--END IF;
+
+	if :NEW.fromdate+i>:NEW.todate then
+	EXIT;  -- exit loop
+	END IF;
+
+	v_leaveappdetails_ID:=get_uuid();
+
+
+	INSERT INTO thr_em_lv_appldetails
+	(
+	  thr_em_lv_appldetails_id, ad_client_id,ad_org_id,isactive,created,createdby,updated,updatedby,thr_em_lv_appl_id,
+	  leavedate,description
+	)
+        VALUES 
+        (
+	   v_leaveappdetails_ID,:new.ad_client_ID,:new.ad_org_id,'Y',now(),:new.CreatedBy,now(),
+            :new.createdBy,:NEW.thr_em_lv_appl_id,:NEW.fromdate+i,
+            :NEW.description
+        );
+
+        
+
+      end loop;
+
+
+
+      
+--SELECT EXTRACT(DOY FROM TIMESTAMP '2011-06-01 20:38:40');
+	if :new.approved='Y' then
+		
+		 FOR I IN 0..365 loop
+		--IF new.REPEATOPTION='1'  THEN
+		-- IF mod(I,7)>0 THEN
+		-- CONTINUE;
+		 --end if;
+		--END IF;
+
+		if :NEW.fromdate+i>:NEW.todate then
+			EXIT;  -- exit loop
+		END IF;
+		v_leaveapprove_ID:=get_uuid();
+		INSERT INTO thr_empl_lv_appr
+		(
+		thr_empl_lv_appr_id,ad_client_id,ad_org_id,isactive,created,createdby,updated,updatedby,thr_em_lv_appl_id,thr_empl_info_id,thr_empl_leave_plan_id,
+		thr_empl_leave_type_id,leavedate,status,description
+	        )
+                VALUES 
+                (
+                v_leaveapprove_ID,:new.ad_client_ID,:new.ad_org_id,'Y',now(),:new.CreatedBy,now(),:new.createdBy,:new.thr_em_lv_appl_id,
+                :new.thr_empl_info_id,:new.thr_empl_leave_plan_id,:new.thr_empl_leave_type_id,:new.fromdate+i,:new.status,:new.description
+                );	
+		--Update leave balance
+		FOR CUR_LEAVE_BALANCE IN (select leave_balance from thr_em_lv_acct_dtls where thr_empl_info_id = :new.thr_empl_info_id
+		and thr_empl_leave_type_id = :new.thr_empl_leave_type_id)
+		loop
+		v_update_balance:= CUR_LEAVE_BALANCE.leave_balance - :new.requested_days;
+		
+		update thr_em_lv_acct_dtls set leave_balance = v_update_balance 
+		where thr_empl_info_id = :new.thr_empl_info_id and thr_empl_leave_type_id = :new.thr_empl_leave_type_id;		
+		END loop;
+		--Approve details
+		/* FOR I IN 0..365 loop
+		--IF new.REPEATOPTION='1'  THEN
+		-- IF mod(I,7)>0 THEN
+		-- CONTINUE;
+		 --end if;
+		--END IF;
+
+		if :NEW.fromdate+i>:NEW.todate then
+		EXIT;  -- exit loop
+		END IF;
+		v_leaveapprovedetail_ID:=get_uuid();
+
+
+		INSERT INTO hrmhyt_leaveapprovedetail
+		(
+		  hrmhyt_leaveapprovedetail_id, ad_client_id,ad_org_id,isactive,created,createdby,updated,updatedby,hrmhyt_leaveapprove_id,
+		  leavedateapprove,description
+		)
+		VALUES 
+		(
+		   v_leaveapprovedetail_ID,:new.ad_client_ID,:new.ad_org_id,'Y',now(),:new.CreatedBy,now(),
+		    :new.createdBy,v_leaveapprove_ID,:NEW.fromdate+i,
+		    :NEW.description
+		); */
+		
+	end loop;	
+        END IF;
+
+	if :new.approved='Y' and :new.ispayment = 'Y' then
+	
+		select s.thr_empl_salary_id,s.grossamt into v_thr_empl_salary,v_grossamt
+		from thr_empl_salary s 
+		where s.thr_empl_info_id=:new.thr_empl_info_id;
+
+		select l.thr_empl_loan_id  into v_loan_type
+		from thr_empl_loan l,thr_empl_loan_type c
+		where l.thr_empl_loan_type_id=c.thr_empl_loan_type_id
+		and c.loan_type='Salary Advance';
+
+		v_loanadvance_ID:=get_uuid();
+		insert into thr_empl_loanadvance
+		(
+		  thr_empl_loanadvance_id ,ad_client_id ,ad_org_id ,isactive ,
+		  created ,createdby ,updated ,updatedby ,
+		  thr_empl_salary_id ,loanamt ,tenuremonths ,
+		  scheduled ,closed ,deductfrmsal ,documentno ,
+		  starting_date ,thr_empl_loan_id
+		  )
+		  values
+		  (
+		   v_loanadvance_ID,:new.ad_client_ID,:new.ad_org_id,'Y',
+		   now(),:new.CreatedBy,now(),:new.createdBy,
+		   v_thr_empl_salary,v_grossamt,1,
+		   'Y','N','Y',(select max(to_number(documentno))+1 from thr_empl_loanadvance),
+		   :new.fromdate,v_loan_type
+		  );
+	end if ;
+END IF;
+  --  Trigger for TreeNode
+  IF INSERTING THEN
+   NULL;
+
+  END IF;
+  END IF;
+  
+
+  IF UPDATING THEN
+  
+Null;
+
+  END IF;
+  
+ 
+  -- Deleting
+END THR_EM_LV_APPL_TRG
+]]></body>
+    </trigger>
+  </database>

@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+  <database name="FUNCTION THR_NOOFHOLIDAYS_PER">
+    <function name="THR_NOOFHOLIDAYS_PER" type="NUMERIC">
+      <parameter name="p_from_date" type="TIMESTAMP" mode="in">
+        <default/>
+      </parameter>
+      <parameter name="p_to_date" type="TIMESTAMP" mode="in">
+        <default/>
+      </parameter>
+      <body><![CDATA[/*************************************************************************
+* The contents of this file are subject to the Openbravo  Public  License
+* Version  1.1  (the  "License"),  being   the  Mozilla   Public  License
+* Version 1.1  with a permitted attribution clause; you may not  use this
+* file except in compliance with the License. You  may  obtain  a copy of
+* the License at http://www.openbravo.com/legal/license.html
+* Software distributed under the License  is  distributed  on  an "AS IS"
+* basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+* License for the specific  language  governing  rights  and  limitations
+* under the License.
+* The Original Code is Openbravo ERP.
+* The Initial Developer of the Original Code is Openbravo SLU
+* All portions are Copyright (C) 2009-2012 Openbravo SLU
+* All Rights Reserved.
+* Contributor(s):  ______________________________________.
+************************************************************************/
+  -- Logistice
+  V_NOOFWEEKENDS NUMBER:=0;
+  V_NOOFHOLIDAYS NUMBER:=0;
+  V_NOOFWEEKENDS1 NUMBER:=0;
+    Cur_Parameter RECORD;
+    Cur_RequisitionLine RECORD;
+BEGIN
+
+   SELECT COUNT(1)  
+INTO V_NOOFWEEKENDS 
+FROM THR_EMPL_HLDY_REL D, thr_empl_hlday_yr Y
+WHERE Y.thr_empl_hlday_yr_ID=D.thr_empl_hlday_yr_ID
+AND REPEATOPTION='1'
+AND d.is_partial ='N'
+AND HOLIDATE BETWEEN p_from_date AND p_TO_DATE;
+
+   SELECT COUNT(1)/2.0  
+INTO V_NOOFWEEKENDS1 
+FROM THR_EMPL_HLDY_REL D, thr_empl_hlday_yr Y
+WHERE Y.thr_empl_hlday_yr_ID=D.thr_empl_hlday_yr_ID
+AND REPEATOPTION='1'
+AND d.is_partial ='Y'
+AND HOLIDATE BETWEEN p_from_date AND p_TO_DATE;
+
+SELECT COUNT(1)  
+INTO V_NOOFHOLIDAYS 
+FROM THR_EMPL_HLDY_REL D, thr_empl_hlday_yr Y
+WHERE Y.thr_empl_hlday_yr_ID=D.thr_empl_hlday_yr_ID
+AND REPEATOPTION='2'
+AND HOLIDATE BETWEEN p_from_date AND p_TO_DATE;
+V_NOOFHOLIDAYS:=V_NOOFHOLIDAYS+V_NOOFWEEKENDS+V_NOOFWEEKENDS1;
+RETURN V_NOOFHOLIDAYS;
+EXCEPTION
+WHEN OTHERS THEN
+  NULL;
+  --RETURN;
+END THR_NOOFHOLIDAYS_PER
+]]></body>
+    </function>
+  </database>

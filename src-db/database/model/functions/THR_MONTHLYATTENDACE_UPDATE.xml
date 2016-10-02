@@ -1,0 +1,144 @@
+<?xml version="1.0"?>
+  <database name="FUNCTION THR_MONTHLYATTENDACE_UPDATE">
+    <function name="THR_MONTHLYATTENDACE_UPDATE" type="NULL">
+      <parameter name="p_att_date" type="VARCHAR" mode="in">
+        <default/>
+      </parameter>
+      <body><![CDATA[-- Logistice
+	v_ResultStr VARCHAR2(2000):='';
+	v_Message VARCHAR2(2000):='';
+   
+        v_att_date date:=now()-7;
+	CUR_PARAMETER_EMP RECORD;
+	CUR_PARAMETER_EMP1 RECORD;
+	v_thremplatt_ID VARCHAR2(32);
+	v_att_status VARCHAR2(2);
+	v_h_count NUMBER;
+	v_half_count NUMBER;
+	v_l_count NUMBER;
+	v_count NUMBER;
+    BEGIN
+
+select count(*) into v_h_count from thr_empl_hlday_yr h, thr_empl_hldy_rel y 
+	where h.thr_empl_hlday_yr_id=y.thr_empl_hlday_yr_id
+	and h.is_partial='N'
+	and y.holidate =v_att_date;
+
+select count(*) into v_half_count 
+from thr_empl_hlday_yr h, thr_empl_hldy_rel y 
+	where h.thr_empl_hlday_yr_id=y.thr_empl_hlday_yr_id
+	and h.is_partial='Y'
+	and y.holidate =v_att_date;
+	
+FOR CUR_PARAMETER_EMP IN (
+	select distinct e.thr_empl_info_id,e.thr_em_department_id,es.thr_em_sft_inf_id,e.ad_org_id,e.CreatedBy,
+	e.ad_client_id from thr_empl_info e, thr_empl_shift es
+	where e.thr_empl_info_id=es.thr_empl_info_id
+	--and es.thr_empl_info_id='F3A35F0DB2E14B00AAD29F258BB92FFF'
+	)
+Loop
+	--Employee attendance count
+	select count(*) into v_count from thr_em_attn_proc a
+	where a.thr_empl_info_id=CUR_PARAMETER_EMP.thr_empl_info_id
+	and a.attendance_date=v_att_date;
+
+	--Leave Count
+	select count(*) into v_l_count from thr_empl_lv_appr y 
+	where y.leavedate =v_att_date
+	and y.thr_empl_info_id=CUR_PARAMETER_EMP.thr_empl_info_id;
+	
+	
+	IF coalesce(v_h_count,0)>0 and coalesce(v_count,0)<1 THEN 
+	v_att_status:='DD';
+	v_thremplatt_ID=get_uuid();
+	INSERT INTO thr_em_attn_proc(thr_em_attn_proc_id ,ad_org_id,ad_client_id,isactive,
+		 created ,createdby,updated,updatedby,
+		 thr_empl_info_id ,thr_em_department_id,attendance_date ,in_time,
+		 status,is_manual_attn,manual_reason,
+		 shift,over_time,late,woking_days
+		 ) 
+	 values
+		 (v_thremplatt_ID,CUR_PARAMETER_EMP.ad_org_id,CUR_PARAMETER_EMP.ad_client_id,'Y',
+		 now(),CUR_PARAMETER_EMP.CreatedBy,now(),CUR_PARAMETER_EMP.createdBy,
+		 CUR_PARAMETER_EMP.thr_empl_info_id,CUR_PARAMETER_EMP.thr_em_department_id,v_att_date,null,
+		 v_att_status,'N',null,
+		 CUR_PARAMETER_EMP.thr_em_sft_inf_id,0.00,0,1.00
+		 );
+	insert into temp values(v_h_count,v_count);
+
+	ELSIF coalesce(v_l_count,0)>0 and coalesce(v_count,0)<1 THEN 
+	v_att_status:='L';
+	v_thremplatt_ID=get_uuid();
+	INSERT INTO thr_em_attn_proc(thr_em_attn_proc_id ,ad_org_id,ad_client_id,isactive,
+		 created ,createdby,updated,updatedby,
+		 thr_empl_info_id ,thr_em_department_id,attendance_date ,in_time,
+		 status,is_manual_attn,manual_reason,
+		 shift,over_time,late,woking_days
+		 ) 
+	 values
+		 (v_thremplatt_ID,CUR_PARAMETER_EMP.ad_org_id,CUR_PARAMETER_EMP.ad_client_id,'Y',
+		 now(),CUR_PARAMETER_EMP.CreatedBy,now(),CUR_PARAMETER_EMP.createdBy,
+		 CUR_PARAMETER_EMP.thr_empl_info_id,CUR_PARAMETER_EMP.thr_em_department_id,v_att_date,null,
+		 v_att_status,'N',null,
+		 CUR_PARAMETER_EMP.thr_em_sft_inf_id,0.00,0,1.00
+		 );
+	ELSIF coalesce(v_l_count,0)=0 and coalesce(v_count,0)=0 THEN 
+
+	v_att_status:='A';
+	v_thremplatt_ID=get_uuid();
+	INSERT INTO thr_em_attn_proc(thr_em_attn_proc_id ,ad_org_id,ad_client_id,isactive,
+		 created ,createdby,updated,updatedby,
+		 thr_empl_info_id ,thr_em_department_id,attendance_date ,in_time,
+		 status,is_manual_attn,manual_reason,
+		 shift,over_time,late,woking_days
+		 ) 
+	 values
+		 (v_thremplatt_ID,CUR_PARAMETER_EMP.ad_org_id,CUR_PARAMETER_EMP.ad_client_id,'Y',
+		 now(),CUR_PARAMETER_EMP.CreatedBy,now(),CUR_PARAMETER_EMP.createdBy,
+		 CUR_PARAMETER_EMP.thr_empl_info_id,CUR_PARAMETER_EMP.thr_em_department_id,v_att_date,null,
+		 v_att_status,'N',null,
+		 CUR_PARAMETER_EMP.thr_em_sft_inf_id,0.00,0,0.00
+		 );
+	END IF;
+	
+	
+END LOOP;
+
+FOR CUR_PARAMETER_EMP1 IN (
+	select distinct e.thr_empl_info_id,e.thr_em_department_id,es.thr_em_sft_inf_id,e.ad_org_id,e.CreatedBy,
+	e.ad_client_id from thr_empl_info e, thr_empl_shift es,thr_em_sft_inf sf
+	where e.thr_empl_info_id=es.thr_empl_info_id
+	and es.thr_em_sft_inf_id=sf.thr_em_sft_inf_id
+	and sf.is_partial='Y'
+	)
+Loop
+	if v_half_count>0 then
+	
+	v_att_status:='DD';
+	v_thremplatt_ID=get_uuid();
+	INSERT INTO thr_em_attn_proc(thr_em_attn_proc_id ,ad_org_id,ad_client_id,isactive,
+		 created ,createdby,updated,updatedby,
+		 thr_empl_info_id ,thr_em_department_id,attendance_date ,in_time,
+		 status,is_manual_attn,manual_reason,
+		 shift,over_time,late,woking_days
+		 ) 
+	 values
+		 (v_thremplatt_ID,CUR_PARAMETER_EMP.ad_org_id,CUR_PARAMETER_EMP.ad_client_id,'Y',
+		 now(),CUR_PARAMETER_EMP.CreatedBy,now(),CUR_PARAMETER_EMP.createdBy,
+		 CUR_PARAMETER_EMP.thr_empl_info_id,CUR_PARAMETER_EMP.thr_em_department_id,v_att_date,null,
+		 v_att_status,'N',null,
+		 CUR_PARAMETER_EMP.thr_em_sft_inf_id,0.00,0,0.5
+		 );
+	end if;
+END LOOP;
+
+    v_Message := ' Daily Attendance Processed';
+EXCEPTION
+WHEN OTHERS THEN
+  v_ResultStr:= '@ERROR=' || SQLERRM;
+  DBMS_OUTPUT.PUT_LINE(v_ResultStr) ;
+  RETURN;
+END THR_MONTHLYATTENDACE_UPDATE
+]]></body>
+    </function>
+  </database>

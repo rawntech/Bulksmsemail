@@ -1,0 +1,1300 @@
+<?xml version="1.0" encoding="UTF-8"  ?>
+<!-- Created with iReport - A designer for JasperReports -->
+<!DOCTYPE jasperReport PUBLIC "//JasperReports//DTD Report Design//EN" "http://jasperreports.sourceforge.net/dtds/jasperreport.dtd">
+<jasperReport
+		 name="ANNUAL LEAVE APPLICATION FORM"
+		 columnCount="1"
+		 printOrder="Vertical"
+		 orientation="Landscape"
+		 pageWidth="595"
+		 pageHeight="842"
+		 columnWidth="535"
+		 columnSpacing="0"
+		 leftMargin="30"
+		 rightMargin="30"
+		 topMargin="20"
+		 bottomMargin="20"
+		 whenNoDataType="NoPages"
+		 isTitleNewPage="false"
+		 isSummaryNewPage="false">
+	<property name="ireport.scriptlethandling" value="0" />
+	<property name="ireport.encoding" value="UTF-8" />
+	<import value="java.util.*" />
+	<import value="net.sf.jasperreports.engine.*" />
+	<import value="net.sf.jasperreports.engine.data.*" />
+
+	<parameter name="AD_Org_ID" isForPrompting="true" class="java.lang.String">
+		<defaultValueExpression ><![CDATA[""]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Documentno" isForPrompting="true" class="java.lang.String"/>
+	<queryString><![CDATA[select cl.name clientname,emp.documentno empid,emp.known_as employee,dept.name department,desg.name designation,org.name orgname,app.description reason,
+app.fromdate,app.todate,app.requested_days,app.leavejoindate dateofjoining,ltype.name Typeofleave,app.leaveaddress
+from thr_empl_info emp ,thr_em_department dept,thr_em_designation desg, thr_em_lv_appl app,ad_org org,thr_empl_leave_type ltype,
+ad_client cl
+where emp.thr_empl_info_id = app.thr_empl_info_id
+and emp.thr_em_department_id = dept.thr_em_department_id
+and emp.thr_em_designation_id = desg.thr_em_designation_id
+and app.thr_empl_leave_type_id=ltype.thr_empl_leave_type_id
+and emp.ad_org_id = org.ad_org_id
+and emp.ad_client_id=cl.ad_client_id
+and (app.ad_org_id = coalesce($P{AD_Org_ID},app.AD_ORG_ID) or $P{AD_Org_ID}='0')
+and app.documentno = $P{Documentno}]]></queryString>
+
+	<field name="clientname" class="java.lang.String"/>
+	<field name="empid" class="java.lang.String"/>
+	<field name="employee" class="java.lang.String"/>
+	<field name="department" class="java.lang.String"/>
+	<field name="designation" class="java.lang.String"/>
+	<field name="orgname" class="java.lang.String"/>
+	<field name="reason" class="java.lang.String"/>
+	<field name="fromdate" class="java.sql.Timestamp"/>
+	<field name="todate" class="java.sql.Timestamp"/>
+	<field name="requested_days" class="java.math.BigDecimal"/>
+	<field name="dateofjoining" class="java.sql.Timestamp"/>
+	<field name="typeofleave" class="java.lang.String"/>
+	<field name="leaveaddress" class="java.lang.String"/>
+
+		<background>
+			<band height="0"  isSplitAllowed="true" >
+			</band>
+		</background>
+		<title>
+			<band height="50"  isSplitAllowed="true" >
+				<staticText>
+					<reportElement
+						x="182"
+						y="23"
+						width="101"
+						height="20"
+						key="staticText-46"/>
+					<box></box>
+					<textElement textAlignment="Left">
+						<font pdfFontName="Helvetica-Bold" size="12" isBold="true"/>
+					</textElement>
+				<text><![CDATA[Organization:]]></text>
+				</staticText>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="283"
+						y="23"
+						width="245"
+						height="20"
+						key="textField"/>
+					<box></box>
+					<textElement textAlignment="Left" verticalAlignment="Middle">
+						<font pdfFontName="Helvetica-Bold" size="12" isBold="true"/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[$F{orgname}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="182"
+						y="2"
+						width="346"
+						height="18"
+						key="textField"/>
+					<box></box>
+					<textElement>
+						<font pdfFontName="Helvetica-Bold" size="12" isBold="true"/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[$F{clientname}]]></textFieldExpression>
+				</textField>
+			</band>
+		</title>
+		<pageHeader>
+			<band height="0"  isSplitAllowed="true" >
+			</band>
+		</pageHeader>
+		<columnHeader>
+			<band height="0"  isSplitAllowed="true" >
+			</band>
+		</columnHeader>
+		<detail>
+			<band height="545"  isSplitAllowed="true" >
+				<line direction="TopDown">
+					<reportElement
+						x="0"
+						y="1"
+						width="0"
+						height="535"
+						key="line-1"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<line direction="TopDown">
+					<reportElement
+						x="273"
+						y="238"
+						width="0"
+						height="162"
+						key="line-2"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<staticText>
+					<reportElement
+						x="275"
+						y="347"
+						width="31"
+						height="18"
+						key="staticText-47"/>
+					<box></box>
+					<textElement textAlignment="Justified" verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[ From:]]></text>
+				</staticText>
+				<line direction="TopDown">
+					<reportElement
+						x="306"
+						y="363"
+						width="50"
+						height="0"
+						key="line-3"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<staticText>
+					<reportElement
+						x="358"
+						y="347"
+						width="25"
+						height="18"
+						key="staticText-48"/>
+					<box></box>
+					<textElement textAlignment="Justified" verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[To:]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="2"
+						y="405"
+						width="70"
+						height="18"
+						key="staticText-50"/>
+					<box></box>
+					<textElement textAlignment="Justified" verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[ Leave Approved  ]]></text>
+				</staticText>
+				<rectangle>
+					<reportElement
+						x="78"
+						y="405"
+						width="16"
+						height="17"
+						key="rectangle-1"/>
+					<graphicElement stretchType="NoStretch"/>
+				</rectangle>
+				<staticText>
+					<reportElement
+						x="100"
+						y="405"
+						width="61"
+						height="18"
+						key="staticText-51"/>
+					<box></box>
+					<textElement textAlignment="Justified" verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[ Not Approved   ]]></text>
+				</staticText>
+				<rectangle>
+					<reportElement
+						x="168"
+						y="405"
+						width="16"
+						height="17"
+						key="rectangle-2"/>
+					<graphicElement stretchType="NoStretch"/>
+				</rectangle>
+				<staticText>
+					<reportElement
+						x="192"
+						y="405"
+						width="39"
+						height="18"
+						key="staticText-52"/>
+					<box></box>
+					<textElement textAlignment="Justified" verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[Reason:]]></text>
+				</staticText>
+				<line direction="TopDown">
+					<reportElement
+						x="534"
+						y="1"
+						width="0"
+						height="534"
+						key="line-4"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<staticText>
+					<reportElement
+						x="275"
+						y="373"
+						width="31"
+						height="18"
+						key="staticText-53"/>
+					<box></box>
+					<textElement textAlignment="Justified" verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[ From:]]></text>
+				</staticText>
+				<line direction="TopDown">
+					<reportElement
+						x="306"
+						y="389"
+						width="50"
+						height="0"
+						key="line-5"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<staticText>
+					<reportElement
+						x="358"
+						y="373"
+						width="25"
+						height="18"
+						key="staticText-54"/>
+					<box></box>
+					<textElement textAlignment="Justified" verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[To:]]></text>
+				</staticText>
+				<line direction="TopDown">
+					<reportElement
+						x="383"
+						y="363"
+						width="50"
+						height="0"
+						key="line-6"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<line direction="TopDown">
+					<reportElement
+						x="383"
+						y="389"
+						width="50"
+						height="0"
+						key="line-7"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<line direction="TopDown">
+					<reportElement
+						x="481"
+						y="363"
+						width="50"
+						height="0"
+						key="line-8"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<line direction="TopDown">
+					<reportElement
+						x="481"
+						y="389"
+						width="50"
+						height="0"
+						key="line-9"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<line direction="TopDown">
+					<reportElement
+						x="0"
+						y="400"
+						width="534"
+						height="0"
+						key="line-10"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<line direction="TopDown">
+					<reportElement
+						x="231"
+						y="420"
+						width="297"
+						height="1"
+						key="line-11"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<line direction="TopDown">
+					<reportElement
+						x="0"
+						y="428"
+						width="532"
+						height="0"
+						key="line-12"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<staticText>
+					<reportElement
+						x="2"
+						y="442"
+						width="136"
+						height="18"
+						key="staticText-56"/>
+					<box></box>
+					<textElement textAlignment="Justified" verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[ Reporting Officer / Section Head:   ]]></text>
+				</staticText>
+				<line direction="TopDown">
+					<reportElement
+						x="139"
+						y="459"
+						width="133"
+						height="0"
+						key="line-13"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<staticText>
+					<reportElement
+						x="278"
+						y="442"
+						width="68"
+						height="18"
+						key="staticText-57"/>
+					<box></box>
+					<textElement verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[ Area Manager:]]></text>
+				</staticText>
+				<line direction="TopDown">
+					<reportElement
+						x="346"
+						y="459"
+						width="182"
+						height="1"
+						key="line-14"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<staticText>
+					<reportElement
+						x="2"
+						y="475"
+						width="58"
+						height="10"
+						key="staticText-58"/>
+					<box></box>
+					<textElement textAlignment="Justified" verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[ H.R.]]></text>
+				</staticText>
+				<line direction="TopDown">
+					<reportElement
+						x="60"
+						y="494"
+						width="212"
+						height="0"
+						key="line-15"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<line direction="TopDown">
+					<reportElement
+						x="353"
+						y="494"
+						width="175"
+						height="1"
+						key="line-16"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<line direction="TopDown">
+					<reportElement
+						x="0"
+						y="535"
+						width="534"
+						height="0"
+						key="line-17"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<staticText>
+					<reportElement
+						x="2"
+						y="506"
+						width="136"
+						height="18"
+						key="staticText-60"/>
+					<box></box>
+					<textElement textAlignment="Left" verticalAlignment="Middle">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[ Cc:Accounts Dept.]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="2"
+						y="317"
+						width="110"
+						height="18"
+						key="staticText-61"/>
+					<box></box>
+					<textElement textAlignment="Justified" verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[ History]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="2"
+						y="372"
+						width="31"
+						height="18"
+						key="staticText-62"/>
+					<box></box>
+					<textElement textAlignment="Justified" verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[ From:]]></text>
+				</staticText>
+				<line direction="TopDown">
+					<reportElement
+						x="33"
+						y="389"
+						width="50"
+						height="0"
+						key="line-18"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<staticText>
+					<reportElement
+						x="85"
+						y="372"
+						width="25"
+						height="18"
+						key="staticText-63"/>
+					<box></box>
+					<textElement textAlignment="Justified" verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[To:]]></text>
+				</staticText>
+				<line direction="TopDown">
+					<reportElement
+						x="110"
+						y="389"
+						width="50"
+						height="0"
+						key="line-19"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<line direction="TopDown">
+					<reportElement
+						x="208"
+						y="389"
+						width="50"
+						height="0"
+						key="line-20"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<staticText>
+					<reportElement
+						x="2"
+						y="346"
+						width="31"
+						height="18"
+						key="staticText-65"/>
+					<box></box>
+					<textElement textAlignment="Justified" verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[ From:]]></text>
+				</staticText>
+				<line direction="TopDown">
+					<reportElement
+						x="33"
+						y="362"
+						width="50"
+						height="0"
+						key="line-21"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<staticText>
+					<reportElement
+						x="85"
+						y="346"
+						width="25"
+						height="18"
+						key="staticText-66"/>
+					<box></box>
+					<textElement textAlignment="Justified" verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[To:]]></text>
+				</staticText>
+				<line direction="TopDown">
+					<reportElement
+						x="110"
+						y="362"
+						width="50"
+						height="0"
+						key="line-22"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<staticText>
+					<reportElement
+						x="164"
+						y="338"
+						width="44"
+						height="12"
+						key="staticText-67"/>
+					<box></box>
+					<textElement textAlignment="Left" verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[# of ]]></text>
+				</staticText>
+				<line direction="TopDown">
+					<reportElement
+						x="208"
+						y="362"
+						width="50"
+						height="0"
+						key="line-23"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<staticText>
+					<reportElement
+						x="111"
+						y="2"
+						width="316"
+						height="19"
+						key="staticText-68"/>
+					<box></box>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font pdfFontName="Helvetica" size="10" isBold="false" isUnderline="true"/>
+					</textElement>
+				<text><![CDATA[Annual LEAVE APPLICATION FORM]]></text>
+				</staticText>
+				<line direction="TopDown">
+					<reportElement
+						x="0"
+						y="21"
+						width="534"
+						height="0"
+						key="line-24"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<staticText>
+					<reportElement
+						x="2"
+						y="25"
+						width="108"
+						height="18"
+						key="staticText-69"/>
+					<box></box>
+					<textElement verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[ Name of the staff :]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="364"
+						y="24"
+						width="66"
+						height="18"
+						key="staticText-70"/>
+					<box></box>
+					<textElement verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[Employee ID:]]></text>
+				</staticText>
+				<line direction="TopDown">
+					<reportElement
+						x="430"
+						y="40"
+						width="100"
+						height="0"
+						key="line-25"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<staticText>
+					<reportElement
+						x="2"
+						y="60"
+						width="86"
+						height="18"
+						key="staticText-71"/>
+					<box></box>
+					<textElement verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[ Department:]]></text>
+				</staticText>
+				<line direction="TopDown">
+					<reportElement
+						x="93"
+						y="76"
+						width="101"
+						height="0"
+						key="line-26"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<staticText>
+					<reportElement
+						x="2"
+						y="92"
+						width="48"
+						height="18"
+						key="staticText-72"/>
+					<box></box>
+					<textElement verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[ Reason:]]></text>
+				</staticText>
+				<line direction="TopDown">
+					<reportElement
+						x="50"
+						y="109"
+						width="302"
+						height="1"
+						key="line-27"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<staticText>
+					<reportElement
+						x="356"
+						y="92"
+						width="80"
+						height="18"
+						key="staticText-73"/>
+					<box></box>
+					<textElement textAlignment="Left" verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[Number of Days:]]></text>
+				</staticText>
+				<line direction="TopDown">
+					<reportElement
+						x="437"
+						y="109"
+						width="94"
+						height="0"
+						key="line-28"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<staticText>
+					<reportElement
+						x="2"
+						y="125"
+						width="76"
+						height="18"
+						key="staticText-74"/>
+					<box></box>
+					<textElement textAlignment="Justified" verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[ From Date:]]></text>
+				</staticText>
+				<line direction="TopDown">
+					<reportElement
+						x="95"
+						y="143"
+						width="71"
+						height="0"
+						key="line-29"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<staticText>
+					<reportElement
+						x="174"
+						y="127"
+						width="57"
+						height="18"
+						key="staticText-75"/>
+					<box></box>
+					<textElement textAlignment="Center" verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[To:]]></text>
+				</staticText>
+				<line direction="TopDown">
+					<reportElement
+						x="259"
+						y="145"
+						width="74"
+						height="0"
+						key="line-30"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<staticText>
+					<reportElement
+						x="346"
+						y="126"
+						width="90"
+						height="18"
+						key="staticText-76"/>
+					<box></box>
+					<textElement verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[ Date of Joining: ]]></text>
+				</staticText>
+				<line direction="TopDown">
+					<reportElement
+						x="437"
+						y="143"
+						width="92"
+						height="1"
+						key="line-31"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<staticText>
+					<reportElement
+						x="2"
+						y="198"
+						width="104"
+						height="18"
+						key="staticText-77"/>
+					<box></box>
+					<textElement textAlignment="Justified" verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[ Signature of Staff:]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="335"
+						y="188"
+						width="86"
+						height="28"
+						key="staticText-78"/>
+					<box></box>
+					<textElement verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[ Destination (Airport):	]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="2"
+						y="239"
+						width="228"
+						height="18"
+						key="staticText-79"/>
+					<box></box>
+					<textElement textAlignment="Justified" verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[ Leave Entitlement ( OFFICE USE ONLY)]]></text>
+				</staticText>
+				<line direction="TopDown">
+					<reportElement
+						x="0"
+						y="237"
+						width="534"
+						height="0"
+						key="line-32"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<staticText>
+					<reportElement
+						x="274"
+						y="241"
+						width="138"
+						height="30"
+						key="staticText-80"/>
+					<box></box>
+					<textElement textAlignment="Justified" verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[ Sick Leave Entitlement:]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="274"
+						y="281"
+						width="58"
+						height="25"
+						key="staticText-81"/>
+					<box></box>
+					<textElement textAlignment="Justified" verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[Leave History:]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="196"
+						y="60"
+						width="62"
+						height="18"
+						key="staticText-82"/>
+					<box></box>
+					<textElement verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[Designation:]]></text>
+				</staticText>
+				<line direction="TopDown">
+					<reportElement
+						x="257"
+						y="76"
+						width="100"
+						height="0"
+						key="line-34"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<line direction="TopDown">
+					<reportElement
+						x="112"
+						y="43"
+						width="242"
+						height="0"
+						key="line-35"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<line direction="TopDown">
+					<reportElement
+						x="422"
+						y="215"
+						width="95"
+						height="1"
+						key="line-36"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<staticText>
+					<reportElement
+						x="2"
+						y="162"
+						width="148"
+						height="18"
+						key="staticText-83"/>
+					<box></box>
+					<textElement textAlignment="Justified" verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[ Address and Contact # during leave:]]></text>
+				</staticText>
+				<line direction="TopDown">
+					<reportElement
+						x="152"
+						y="178"
+						width="373"
+						height="1"
+						key="line-38"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<staticText>
+					<reportElement
+						x="2"
+						y="263"
+						width="98"
+						height="18"
+						key="staticText-84"/>
+					<box></box>
+					<textElement textAlignment="Justified" verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[ Date of Joining:]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="2"
+						y="288"
+						width="64"
+						height="18"
+						key="staticText-85"/>
+					<box></box>
+					<textElement textAlignment="Justified" verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[ # of Days:]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="161"
+						y="288"
+						width="46"
+						height="18"
+						key="staticText-86"/>
+					<box></box>
+					<textElement textAlignment="Justified" verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[As on:]]></text>
+				</staticText>
+				<line direction="TopDown">
+					<reportElement
+						x="207"
+						y="305"
+						width="60"
+						height="0"
+						key="line-39"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<line direction="TopDown">
+					<reportElement
+						x="66"
+						y="305"
+						width="60"
+						height="0"
+						key="line-40"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<line direction="TopDown">
+					<reportElement
+						x="0"
+						y="1"
+						width="534"
+						height="0"
+						key="line-41"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="112"
+						y="27"
+						width="241"
+						height="16"
+						key="textField"/>
+					<box></box>
+					<textElement verticalAlignment="Bottom">
+						<font size="8"/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[$F{employee}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="94"
+						y="60"
+						width="100"
+						height="16"
+						key="textField"/>
+					<box></box>
+					<textElement verticalAlignment="Bottom">
+						<font size="8"/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[$F{department}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="431"
+						y="24"
+						width="100"
+						height="16"
+						key="textField"/>
+					<box></box>
+					<textElement verticalAlignment="Bottom">
+						<font size="8"/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[$F{empid}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="258"
+						y="60"
+						width="100"
+						height="16"
+						key="textField"/>
+					<box></box>
+					<textElement verticalAlignment="Bottom">
+						<font size="8"/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[$F{designation}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="51"
+						y="93"
+						width="305"
+						height="16"
+						key="textField"/>
+					<box></box>
+					<textElement verticalAlignment="Bottom">
+						<font size="8"/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[$F{reason}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="95"
+						y="127"
+						width="72"
+						height="16"
+						key="textField"/>
+					<box></box>
+					<textElement verticalAlignment="Bottom">
+						<font size="8"/>
+					</textElement>
+				<textFieldExpression   class="java.sql.Timestamp"><![CDATA[$F{fromdate}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="259"
+						y="129"
+						width="72"
+						height="16"
+						key="textField"/>
+					<box></box>
+					<textElement verticalAlignment="Bottom">
+						<font size="8"/>
+					</textElement>
+				<textFieldExpression   class="java.sql.Timestamp"><![CDATA[$F{todate}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" pattern="##0.00" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="437"
+						y="93"
+						width="94"
+						height="16"
+						key="textField"/>
+					<box></box>
+					<textElement verticalAlignment="Bottom">
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.math.BigDecimal"><![CDATA[$F{requested_days}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="437"
+						y="127"
+						width="90"
+						height="16"
+						key="textField"/>
+					<box></box>
+					<textElement verticalAlignment="Bottom">
+						<font size="8"/>
+					</textElement>
+				<textFieldExpression   class="java.sql.Timestamp"><![CDATA[$F{dateofjoining}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="151"
+						y="162"
+						width="371"
+						height="16"
+						key="textField"/>
+					<box></box>
+					<textElement verticalAlignment="Bottom">
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[$F{leaveaddress}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement
+						x="366"
+						y="59"
+						width="66"
+						height="18"
+						key="staticText-87"/>
+					<box></box>
+					<textElement verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[Leave Type:]]></text>
+				</staticText>
+				<line direction="TopDown">
+					<reportElement
+						x="432"
+						y="75"
+						width="100"
+						height="0"
+						key="line-42"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="433"
+						y="59"
+						width="100"
+						height="16"
+						key="textField"/>
+					<box></box>
+					<textElement verticalAlignment="Bottom">
+						<font size="8"/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[$F{typeofleave}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="100"
+						y="263"
+						width="100"
+						height="18"
+						key="textField-1"/>
+					<box></box>
+					<textElement verticalAlignment="Bottom">
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.sql.Timestamp"><![CDATA[$F{dateofjoining}]]></textFieldExpression>
+				</textField>
+				<line direction="TopDown">
+					<reportElement
+						x="106"
+						y="216"
+						width="226"
+						height="0"
+						key="line-43"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<line direction="TopDown">
+					<reportElement
+						x="100"
+						y="280"
+						width="100"
+						height="1"
+						key="line-44"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<staticText>
+					<reportElement
+						x="2"
+						y="485"
+						width="58"
+						height="10"
+						key="staticText-88"/>
+					<box></box>
+					<textElement textAlignment="Justified" verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[Manager:]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="294"
+						y="475"
+						width="58"
+						height="10"
+						key="staticText-89"/>
+					<box></box>
+					<textElement textAlignment="Justified" verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[General]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="294"
+						y="485"
+						width="58"
+						height="10"
+						key="staticText-90"/>
+					<box></box>
+					<textElement textAlignment="Justified" verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[Manager:]]></text>
+				</staticText>
+				<line direction="TopDown">
+					<reportElement
+						x="412"
+						y="270"
+						width="105"
+						height="1"
+						key="line-45"/>
+					<graphicElement stretchType="NoStretch"/>
+				</line>
+				<staticText>
+					<reportElement
+						x="164"
+						y="350"
+						width="44"
+						height="12"
+						key="staticText-91"/>
+					<box></box>
+					<textElement textAlignment="Left" verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[days]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="164"
+						y="366"
+						width="44"
+						height="12"
+						key="staticText-92"/>
+					<box></box>
+					<textElement textAlignment="Left" verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[# of ]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="164"
+						y="378"
+						width="44"
+						height="12"
+						key="staticText-93"/>
+					<box></box>
+					<textElement textAlignment="Left" verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[days]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="434"
+						y="339"
+						width="44"
+						height="12"
+						key="staticText-94"/>
+					<box></box>
+					<textElement textAlignment="Left" verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[# of ]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="434"
+						y="351"
+						width="44"
+						height="12"
+						key="staticText-95"/>
+					<box></box>
+					<textElement textAlignment="Left" verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[days]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="436"
+						y="367"
+						width="44"
+						height="12"
+						key="staticText-96"/>
+					<box></box>
+					<textElement textAlignment="Left" verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[# of ]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="436"
+						y="379"
+						width="44"
+						height="12"
+						key="staticText-97"/>
+					<box></box>
+					<textElement textAlignment="Left" verticalAlignment="Bottom">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[days]]></text>
+				</staticText>
+			</band>
+		</detail>
+		<columnFooter>
+			<band height="0"  isSplitAllowed="true" >
+			</band>
+		</columnFooter>
+		<pageFooter>
+			<band height="0"  isSplitAllowed="true" >
+			</band>
+		</pageFooter>
+		<summary>
+			<band height="0"  isSplitAllowed="true" >
+			</band>
+		</summary>
+</jasperReport>

@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+  <database name="FUNCTION THR_GET_HOLIDAY_SHIFT_ID">
+    <function name="THR_GET_HOLIDAY_SHIFT_ID" type="VARCHAR">
+      <parameter name="p_em_sft_inf_id" type="VARCHAR" mode="in">
+        <default/>
+      </parameter>
+      <parameter name="p_date" type="VARCHAR" mode="in">
+        <default/>
+      </parameter>
+      <body><![CDATA[v_count NUMBER;
+  v_count2 NUMBER;
+  v_em_sft_inf_id character varying(32);
+BEGIN
+
+select count(*) into v_count from thr_em_sft_inf where thr_em_sft_inf_id=p_em_sft_inf_id
+and isdefault='Y';
+select count(*),thr_em_sft_inf_id  into v_count2,v_em_sft_inf_id  from thr_empl_hldy_rel
+ where holidate=p_date
+ group by thr_em_sft_inf_id;
+
+if v_count=1 and v_count2=1 then
+return v_em_sft_inf_id;
+else 
+RETURN NULL;
+end if;
+
+EXCEPTION 
+  WHEN OTHERS THEN 
+    RETURN NULL;
+END THR_GET_HOLIDAY_SHIFT_ID
+]]></body>
+    </function>
+  </database>

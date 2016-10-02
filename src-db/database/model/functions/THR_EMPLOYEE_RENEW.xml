@@ -1,0 +1,77 @@
+<?xml version="1.0"?>
+  <database name="FUNCTION THR_EMPLOYEE_RENEW">
+    <function name="THR_EMPLOYEE_RENEW" type="NULL">
+      <parameter name="p_contract_date" type="VARCHAR" mode="in">
+        <default/>
+      </parameter>
+      <body><![CDATA[-- Logistice
+	v_ResultStr VARCHAR2(2000):='';
+	v_Message VARCHAR2(2000):='';
+        v_attdaily_id VARCHAR(32);
+	Cur_Parameter_emp RECORD;
+	Cur_Parameter_att RECORD;
+	v_add_leave NUMBER(12,9);
+	v_empllvacct_id VARCHAR2(32);
+    BEGIN  
+	FOR Cur_Parameter_emp IN
+	      ( SELECT i.THR_EMPL_INFO_ID,i.ad_client_id, i.ad_org_id, I.DOCUMENTNO,i.CreatedBy,
+	      I.isrenewauto,I.contractenddate,a.thr_empl_leave_plan_id
+	      FROM THR_EMPL_INFO I ,thr_empl_lv_acct a
+	      where i.THR_EMPL_INFO_id=a.THR_EMPL_INFO_id
+	      and i.contractenddate=trunc(now())
+	      and i.isrenewauto='Y'
+	      ORDER BY I.DOCUMENTNO
+	      )	
+		
+	 LOOP 
+	      update thr_empl_lv_acct set description='Auto Renew Completed'
+	      where THR_EMPL_INFO_id IN (
+	      SELECT i.THR_EMPL_INFO_ID
+	      FROM THR_EMPL_INFO I ,thr_empl_lv_acct a
+	      where i.THR_EMPL_INFO_id=a.THR_EMPL_INFO_id
+	      and i.contractenddate=trunc(now())
+	      and i.isrenewauto='Y'
+	      ORDER BY I.DOCUMENTNO
+		);
+		
+	      --IF(Cur_Parameter_emp.isrenewauto='Y' and Cur_Parameter_emp.contractenddate=TO_DATE(NOW())) THEN
+			--insert into temp (id) values (Cur_Parameter_emp.THR_EMPL_INFO_ID);
+			--select * from temp
+			v_empllvacct_id=get_uuid();
+			insert into thr_empl_lv_acct
+			(
+			thr_empl_lv_acct_id,ad_org_id,ad_client_id,isactive,
+			created,createdby,updated,updatedby,
+			thr_empl_info_id,thr_empl_leave_plan_id,
+			effective_date,end_date,description)
+			values
+			(v_empllvacct_id,Cur_Parameter_emp.ad_org_id,Cur_Parameter_emp.ad_client_id,'Y',
+			now(),Cur_Parameter_emp.CreatedBy,now(),Cur_Parameter_emp.createdBy,
+			Cur_Parameter_emp.thr_empl_info_id,Cur_Parameter_emp.thr_empl_leave_plan_id,
+			Cur_Parameter_emp.contractenddate+1,Cur_Parameter_emp.contractenddate+365,null
+			);
+	      --END IF;
+	      
+	      update thr_empl_lv_acct set isactive='N' where THR_EMPL_INFO_id IN (
+	      SELECT i.THR_EMPL_INFO_ID
+	      FROM THR_EMPL_INFO I ,thr_empl_lv_acct a
+	      where i.THR_EMPL_INFO_id=a.THR_EMPL_INFO_id
+	      and i.contractenddate=trunc(now())
+	      and i.isrenewauto='Y'
+              ORDER BY I.DOCUMENTNO
+              )
+	      and description='Auto Renew Completed'
+	      ;
+	      
+	 END LOOP;
+		
+    
+EXCEPTION
+WHEN OTHERS THEN
+  v_ResultStr:= '@ERROR=' || SQLERRM;
+  DBMS_OUTPUT.PUT_LINE(v_ResultStr) ;
+  RETURN;
+END THR_EMPLOYEE_RENEW
+]]></body>
+    </function>
+  </database>

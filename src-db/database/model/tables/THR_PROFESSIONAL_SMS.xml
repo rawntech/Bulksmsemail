@@ -1,0 +1,164 @@
+<?xml version="1.0"?>
+  <database name="TABLE THR_PROFESSIONAL_SMS">
+    <table name="THR_PROFESSIONAL_SMS" primaryKey="THR_PROFESSIONAL_SMS_KEY">
+      <column name="THR_PROFESSIONAL_SMS_ID" primaryKey="true" required="true" type="VARCHAR" size="32" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <column name="AD_CLIENT_ID" primaryKey="false" required="true" type="VARCHAR" size="32" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <column name="AD_ORG_ID" primaryKey="false" required="true" type="VARCHAR" size="32" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <column name="ISACTIVE" primaryKey="false" required="true" type="CHAR" size="1" autoIncrement="false">
+        <default><![CDATA[Y]]></default>
+        <onCreateDefault/>
+      </column>
+      <column name="CREATED" primaryKey="false" required="true" type="TIMESTAMP" size="7" autoIncrement="false">
+        <default><![CDATA[SYSDATE]]></default>
+        <onCreateDefault/>
+      </column>
+      <column name="CREATEDBY" primaryKey="false" required="true" type="VARCHAR" size="32" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <column name="UPDATED" primaryKey="false" required="true" type="TIMESTAMP" size="7" autoIncrement="false">
+        <default><![CDATA[SYSDATE]]></default>
+        <onCreateDefault/>
+      </column>
+      <column name="UPDATEDBY" primaryKey="false" required="true" type="VARCHAR" size="32" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <column name="RECIPIENTS_PASTE_MANUAL_INPUT" primaryKey="false" required="false" type="CLOB" size="4000" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <column name="THR_GROUP_CONTACT_ID" primaryKey="false" required="true" type="VARCHAR" size="32" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <column name="THR_CONTACT_GROUP_ID" primaryKey="false" required="true" type="VARCHAR" size="32" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <column name="SENDER_ALPHANUMERIC" primaryKey="false" required="true" type="VARCHAR" size="32" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <column name="MSG_INSERT_PLACEHOLDER" primaryKey="false" required="true" type="VARCHAR" size="60" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <column name="MSG_TEXT_BOX" primaryKey="false" required="true" type="VARCHAR" size="160" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <column name="VALIDITY_PERIOD" primaryKey="false" required="true" type="VARCHAR" size="60" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <column name="IS_FLASH_SMS" primaryKey="false" required="false" type="CHAR" size="1" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <column name="IS_DELIVERY_SPEED_LIMIT" primaryKey="false" required="false" type="CHAR" size="1" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <column name="NUMBER_OF_MSG" primaryKey="false" required="false" type="DECIMAL" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <column name="MSG_PER" primaryKey="false" required="false" type="VARCHAR" size="60" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <column name="IS_SCHEDULED_JOB" primaryKey="false" required="false" type="CHAR" size="1" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <column name="SCHEDULED_TIME" primaryKey="false" required="false" type="TIMESTAMP" size="7" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <column name="SCHEDULED_TIMEZONE" primaryKey="false" required="false" type="VARCHAR" size="60" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <column name="IS_DELIVERY_TIME_WINDOW" primaryKey="false" required="false" type="CHAR" size="1" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <column name="FROM_TIME" primaryKey="false" required="false" type="TIMESTAMP" size="7" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <column name="TO_TIME" primaryKey="false" required="false" type="TIMESTAMP" size="7" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <column name="IS_SAT" primaryKey="false" required="false" type="CHAR" size="1" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <column name="IS_SUN" primaryKey="false" required="false" type="CHAR" size="1" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <column name="IS_MON" primaryKey="false" required="false" type="CHAR" size="1" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <column name="IS_TUE" primaryKey="false" required="false" type="CHAR" size="1" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <column name="IS_WED" primaryKey="false" required="false" type="CHAR" size="1" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <column name="IS_THU" primaryKey="false" required="false" type="CHAR" size="1" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <column name="IS_FRI" primaryKey="false" required="false" type="CHAR" size="1" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <column name="MSG_LANGUAGE" primaryKey="false" required="false" type="VARCHAR" size="6" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <foreign-key foreignTable="THR_CONTACT_GROUP" name="THR_CONTACT_GROUP_CG">
+        <reference local="THR_CONTACT_GROUP_ID" foreign="THR_CONTACT_GROUP_ID"/>
+      </foreign-key>
+      <foreign-key foreignTable="THR_GROUP_CONTACT" name="THR_GROUP_CONTACT_GC">
+        <reference local="THR_GROUP_CONTACT_ID" foreign="THR_GROUP_CONTACT_ID"/>
+      </foreign-key>
+      <foreign-key foreignTable="AD_CLIENT" name="THR_PROFESSIONAL_SMS_AD_CLIENT">
+        <reference local="AD_CLIENT_ID" foreign="AD_CLIENT_ID"/>
+      </foreign-key>
+      <foreign-key foreignTable="AD_ORG" name="THR_PROFESSIONAL_SMS_AD_ORG">
+        <reference local="AD_ORG_ID" foreign="AD_ORG_ID"/>
+      </foreign-key>
+      <foreign-key foreignTable="AD_MESSAGE" name="THR_PROFESSIONAL_SMS_MSG">
+        <reference local="MSG_LANGUAGE" foreign="AD_MESSAGE_ID"/>
+      </foreign-key>
+      <check name="THR_PROFESSIONAL_SMS_FLASHSMS"><![CDATA[IS_FLASH_SMS IN ('Y', 'N')]]></check>
+      <check name="THR_PROFESSIONAL_SMS_FRI_CHECK"><![CDATA[IS_FRI IN ('Y', 'N')]]></check>
+      <check name="THR_PROFESSIONAL_SMS_ISACTIVE"><![CDATA[ISACTIVE IN ('Y', 'N')]]></check>
+      <check name="THR_PROFESSIONAL_SMS_ISDELI"><![CDATA[IS_DELIVERY_TIME_WINDOW IN ('Y', 'N')]]></check>
+      <check name="THR_PROFESSIONAL_SMS_ISDELIMIT"><![CDATA[IS_DELIVERY_SPEED_LIMIT IN ('Y', 'N')]]></check>
+      <check name="THR_PROFESSIONAL_SMS_MON_CHECK"><![CDATA[IS_MON IN ('Y', 'N')]]></check>
+      <check name="THR_PROFESSIONAL_SMS_SAT_CHECK"><![CDATA[IS_SAT IN ('Y', 'N')]]></check>
+      <check name="THR_PROFESSIONAL_SMS_SCHEDULED"><![CDATA[IS_SCHEDULED_JOB IN ('Y', 'N')]]></check>
+      <check name="THR_PROFESSIONAL_SMS_SUN_CHECK"><![CDATA[IS_SUN IN ('Y', 'N')]]></check>
+      <check name="THR_PROFESSIONAL_SMS_THU_CHECK"><![CDATA[IS_THU IN ('Y', 'N')]]></check>
+      <check name="THR_PROFESSIONAL_SMS_TUE_CHECK"><![CDATA[IS_TUE IN ('Y', 'N')]]></check>
+      <check name="THR_PROFESSIONAL_SMS_WED_CHECK"><![CDATA[IS_WED IN ('Y', 'N')]]></check>
+    </table>
+  </database>

@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+  <database name="FUNCTION THR_GETPAYALLOUNCE_AMOUNT">
+    <function name="THR_GETPAYALLOUNCE_AMOUNT" type="NUMERIC">
+      <parameter name="p_allowanesortname" type="VARCHAR" mode="in">
+        <default/>
+      </parameter>
+      <parameter name="p_period_id" type="VARCHAR" mode="in">
+        <default/>
+      </parameter>
+      <parameter name="p_thr_empl_info_id" type="VARCHAR" mode="in">
+        <default/>
+      </parameter>
+      <body><![CDATA[/*************************************************************************
+* The contents of this file are subject to the Openbravo  Public  License
+* Version  1.1  (the  "License"),  being   the  Mozilla   Public  License
+* Version 1.1  with a permitted attribution clause; you may not  use this
+* file except in compliance with the License. You  may  obtain  a copy of
+* the License at http://www.openbravo.com/legal/license.html
+* Software distributed under the License  is  distributed  on  an "AS IS"
+* basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+* License for the specific  language  governing  rights  and  limitations
+* under the License.
+* The Original Code is Openbravo ERP.
+* The Initial Developer of the Original Code is Openbravo SLU
+* All portions are Copyright (C) 2001-2009 Openbravo SLU
+* All Rights Reserved.
+* Contributor(s):Mohammad Abu Naser  ______________________________________.
+************************************************************************/
+  --BEGIN
+ -- select name into v_name from hrmhyt_payallowance where hrmhyt_payallowance_id=p_allowaneid
+v_amount NUMBER;
+  BEGIN 
+ select amtpermonth into v_amount 
+      from thr_empl_sal_perd_item si, thr_empl_sal_perd_emp s
+      where si.thr_empl_sal_perd_emp_id=s.thr_empl_sal_perd_emp_id
+      and si.thr_empl_pay_item_id in (
+			(select thr_empl_pay_item_id from thr_empl_pck_sal_item allowance,thr_empl_pay_item empitem
+			where allowance.thr_empl_pck_sal_item_id = empitem.thr_empl_pck_sal_item_id 
+			and allowance.name= p_allowanesortname and allowance.name !='Bonus' and allowance.ad_client_id=s.ad_client_id))
+      and s.thr_empl_info_id=p_thr_empl_info_id
+      and s.c_period_id=p_period_id;
+
+  
+--  RAISE_APPLICATION_ERROR(-20100, v_ResultStr) ;
+RETURN (v_amount);
+END THR_GETPAYALLOUNCE_AMOUNT
+]]></body>
+    </function>
+  </database>

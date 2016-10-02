@@ -1,0 +1,324 @@
+<?xml version="1.0"?>
+  <database name="TRIGGER THR_EMPL_HLDAY_YR_TRG">
+    <trigger name="THR_EMPL_HLDAY_YR_TRG" table="THR_EMPL_HLDAY_YR" fires="after" insert="true" update="true" delete="true" foreach="row">
+      <body><![CDATA[
+    /*************************************************************************
+    * The contents of this file are subject to the Openbravo  Public  License
+    * Version  1.1  (the  "License"),  being   the  Mozilla   Public  License
+    * Version 1.1  with a permitted attribution clause; you may not  use this
+    * file except in compliance with the License. You  may  obtain  a copy of
+    * the License at http://www.openbravo.com/legal/license.html
+    * Software distributed under the License  is  distributed  on  an "AS IS"
+    * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+    * License for the specific  language  governing  rights  and  limitations
+    * under the License.
+    * The Original Code is Openbravo ERP.
+    * The Initial Developer of the Original Code is Openbravo SLU
+    * All portions are Copyright (C) 2001-2013 Openbravo SLU
+    * All Rights Reserved.
+    * Contributor(s): Mohammad Abu Naser, Tasawr Interective.
+    ************************************************************************/ 
+
+  v_holidaydetails_ID VARCHAR2(32);
+  v_count NUMBER;
+  v_startday NUMBER;
+  v_endday NUMBER;
+  v_nod NUMBER;
+   
+BEGIN
+    
+  IF AD_isTriggerEnabled()='N' THEN RETURN;
+  END IF;
+
+  IF (INSERTING OR UPDATING) THEN
+
+     --  Get Unique C_YEAR_id,thr_empl_holiday_id, startdated for thr_empl_hlday_yr_id
+     SELECT count(*)
+     INTO v_count
+     FROM thr_empl_hlday_yr
+     WHERE C_YEAR_id=:NEW.C_YEAR_id
+     and AD_Client_ID=:NEW.AD_Client_ID
+     and AD_ORG_ID=:new.AD_ORG_ID
+     AND thr_empl_holiday_id=:NEW.thr_empl_holiday_id
+     AND startdated=:NEW.startdated;
+
+     IF (v_count<>1) THEN
+       IF (v_count=0) THEN
+
+--SELECT EXTRACT(DOY FROM TIMESTAMP '2011-06-01 20:38:40');
+IF :NEW.enddated IS NULL THEN
+:NEW.enddated:=:NEW.startdated;
+END IF;
+
+FOR I IN 0..365 loop
+IF :new.REPEATOPTION='1'  THEN
+ IF mod(I,7)>0 THEN
+ CONTINUE;
+ end if;
+END IF;
+
+if :NEW.startdated+i>:NEW.enddated then
+EXIT;  -- exit loop
+END IF;
+
+     v_holidaydetails_ID:=get_uuid();
+
+	IF(:NEW.is_partial='Y')THEN
+	INSERT INTO thr_empl_hldy_rel
+	(
+	  thr_empl_hldy_rel_id,
+	  ad_client_id,
+	  ad_org_id,
+	  isactive,
+	  created,
+	  createdby,
+	  updated,
+	  updatedby,
+	  thr_empl_holiday_id,
+	  holidate,
+	  thr_empl_hlday_yr_id,
+	  description,
+	  is_partial,
+	  thr_em_sft_inf_id
+	)
+        VALUES 
+        (
+	   v_holidaydetails_ID,
+            :new.ad_client_ID,
+            :new.ad_org_id,
+            'Y',
+            now(),
+            :new.CreatedBy,
+            now(),
+            :new.createdBy,
+            :NEW.thr_empl_holiday_id,
+            :NEW.startdated+i,
+            :NEW.thr_empl_hlday_yr_id,
+	    :NEW.description,
+	    :New.is_partial,
+	    :NEW.thr_em_sft_inf_id
+        );
+	else
+
+        INSERT INTO thr_empl_hldy_rel
+	(
+	  thr_empl_hldy_rel_id,
+	  ad_client_id,
+	  ad_org_id,
+	  isactive,
+	  created,
+	  createdby,
+	  updated,
+	  updatedby,
+	  thr_empl_holiday_id,
+	  holidate,
+	thr_empl_hlday_yr_id,
+	description,
+	  is_partial,
+	  thr_em_sft_inf_id
+	)
+        VALUES 
+        (
+	   v_holidaydetails_ID,
+            :new.ad_client_ID,
+            :new.ad_org_id,
+            'Y',
+            now(),
+            :new.CreatedBy,
+            now(),
+            :new.createdBy,
+            :NEW.thr_empl_holiday_id,
+            :NEW.startdated+i,
+	    :NEW.thr_empl_hlday_yr_id,
+	    :NEW.description,
+	    :New.is_partial,
+	    :NEW.thr_em_sft_inf_id
+        );
+END if;
+end loop;
+
+      ELSE 
+	 RAISE_APPLICATION_ERROR(-20000, 'Its Already Exits');
+       END IF;
+     ELSE --v_count=1
+   DELETE FROM thr_empl_hldy_rel WHERE thr_empl_hlday_yr_id=:NEW.thr_empl_hlday_yr_id;
+--SELECT EXTRACT(DOY FROM TIMESTAMP '2011-06-01 20:38:40');
+IF :NEW.enddated IS NULL THEN
+:NEW.enddated:=:NEW.startdated;
+END IF;
+
+FOR I IN 0..365 loop
+IF :new.REPEATOPTION='1'  THEN
+ IF mod(I,7)>0 THEN
+ CONTINUE;
+ end if;
+END IF;
+
+if :NEW.startdated+i>:NEW.enddated then
+EXIT;  -- exit loop
+END IF;
+
+     v_holidaydetails_ID:=get_uuid();
+
+	IF(:NEW.is_partial='Y')THEN
+	INSERT INTO thr_empl_hldy_rel
+	(
+	  thr_empl_hldy_rel_id,
+	  ad_client_id,
+	  ad_org_id,
+	  isactive,
+	  created,
+	  createdby,
+	  updated,
+	  updatedby,
+	  thr_empl_holiday_id,
+	  holidate,
+	thr_empl_hlday_yr_id,
+	description,
+	  is_partial,
+	  thr_em_sft_inf_id
+	)
+        VALUES 
+        (
+	   v_holidaydetails_ID,
+            :new.ad_client_ID,
+            :new.ad_org_id,
+            'Y',
+            now(),
+            :new.CreatedBy,
+            now(),
+            :new.createdBy,
+            :NEW.thr_empl_holiday_id,
+            :NEW.startdated+i,
+	    :NEW.thr_empl_hlday_yr_id,
+	    :NEW.description,
+	    :New.is_partial,
+	    :NEW.thr_em_sft_inf_id
+        );
+        else
+
+        INSERT INTO thr_empl_hldy_rel
+	(
+	  thr_empl_hldy_rel_id,
+	  ad_client_id,
+	  ad_org_id,
+	  isactive,
+	  created,
+	  createdby,
+	  updated,
+	  updatedby,
+	  thr_empl_holiday_id,
+	  holidate,
+	thr_empl_hlday_yr_id,
+	description,
+	  is_partial,
+	  thr_em_sft_inf_id
+	)
+        VALUES 
+        (
+	   v_holidaydetails_ID,
+            :new.ad_client_ID,
+            :new.ad_org_id,
+            'Y',
+            now(),
+            :new.CreatedBy,
+            now(),
+            :new.createdBy,
+            :NEW.thr_empl_holiday_id,
+            :NEW.startdated+i,
+	    :NEW.thr_empl_hlday_yr_id,
+	    :NEW.description,
+	    :New.is_partial,
+	    :NEW.thr_em_sft_inf_id
+        );
+END IF;
+end loop;
+  END IF;
+  --  Trigger for TreeNode
+  IF INSERTING THEN
+   
+    --  Insert into TreeNode
+	/* v_holidaydetails_ID:=get_uuid();
+	INSERT INTO thr_empl_hldy_rel
+	(
+	  thr_empl_hldy_rel_id,
+	  ad_client_id,
+	  ad_org_id,
+	  isactive,
+	  created,
+	  createdby,
+	  updated,
+	  updatedby,
+	  thr_empl_holiday_id,
+	  holidate,
+	thr_empl_hlday_yr_id,
+	description
+	)
+        VALUES 
+        (
+	   v_holidaydetails_ID,
+            :new.ad_client_ID,
+            :new.ad_org_id,
+            'Y',
+            now(),
+            :new.CreatedBy,
+            now(),
+            :new.createdBy,
+            :NEW.thr_empl_holiday_id,
+            :NEW.startdated+i,
+	    :NEW.thr_empl_hlday_yr_id,
+	    :NEW.description
+        );
+
+*/
+NULL;
+
+    END IF;
+  END IF;
+  
+
+  IF UPDATING THEN
+  /* DELETE FROM thr_empl_hldy_rel WHERE thr_empl_hldy_rel_id=:NEW.thr_empl_hldy_rel_id;
+	v_holidaydetails_ID:=get_uuid();
+	INSERT INTO thr_empl_hldy_rel
+	(
+	  thr_empl_hldy_rel_id,
+	  ad_client_id,
+	  ad_org_id,
+	  isactive,
+	  created,
+	  createdby,
+	  updated,
+	  updatedby,
+	  thr_empl_holiday_id,
+	  holidate,
+	thr_empl_hlday_yr_id,
+	description
+	)
+        VALUES 
+        (
+	   v_holidaydetails_ID,
+            :new.ad_client_ID,
+            :new.ad_org_id,
+            'Y',
+            now(),
+            :new.CreatedBy,
+            now(),
+            :new.createdBy,
+            :NEW.thr_empl_holiday_id,
+            :NEW.startdated+i,
+	    :NEW.thr_empl_hlday_yr_id,
+	    :NEW.description
+        );
+
+*/
+Null;
+
+  END IF;
+  
+  
+  -- Deleting
+END THR_EMPL_HLDAY_YR_TRG
+]]></body>
+    </trigger>
+  </database>

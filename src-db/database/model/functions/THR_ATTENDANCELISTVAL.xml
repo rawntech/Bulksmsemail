@@ -1,0 +1,274 @@
+<?xml version="1.0"?>
+  <database name="FUNCTION THR_ATTENDANCELISTVAL">
+    <function name="THR_ATTENDANCELISTVAL" type="NULL">
+      <parameter name="pinstance_id" type="VARCHAR" mode="in">
+        <default/>
+      </parameter>
+      <body><![CDATA[-- Logistice
+	v_ResultStr VARCHAR2(2000):='';
+	v_Message VARCHAR2(2000):='';
+	v_Record_ID VARCHAR2(32);
+
+	-- Parameter-- Parameter
+	TYPE RECORD IS REF CURSOR;
+	Cur_Parameter RECORD;
+  
+	AttendanceListVal Record;
+	v_countDupEmp NUMBER:=0;   
+	v_countDupEmp1 NUMBER:=0; 
+	v_count NUMBER:=0;
+	v_flag boolean:=TRUE;
+  
+	v_missingErrorNotice VARCHAR(2000) := '';
+	v_notExistErrorNotice VARCHAR(2000) := '';
+	v_attendaceErrorNotice VARCHAR(2000) := '';
+	v_messageImport VARCHAR(2000) :='';
+
+	v_punchin DATE;
+	v_punchout DATE;
+	v_hr NUMBER:=0;
+
+	v_AD_Client_ID VARCHAR(32);
+	v_AD_Org_ID    VARCHAR(32);
+	v_SHR_Employee_ID VARCHAR(32);
+	v_exception VARCHAR(200) :='';
+	v_emp_job_cnt NUMBER:=0;
+	v_attendance_status_cnt NUMBER:=0;
+  
+   BEGIN
+    --  Update AD_PInstance
+    DBMS_OUTPUT.PUT_LINE('Updating PInstance - Processing ' || PInstance_ID) ;
+    v_ResultStr:='PInstanceNotFound';
+    AD_UPDATE_PINSTANCE(PInstance_ID, NULL, 'Y', NULL, NULL) ;
+BEGIN
+-- Get Parameters
+    v_ResultStr:='ReadingParameters';
+    FOR Cur_Parameter IN
+      (SELECT i.Record_ID,
+        p.ParameterName,
+        p.P_String,
+        p.P_Number,
+        p.P_Date
+      FROM AD_PInstance i
+      LEFT JOIN AD_PInstance_Para p
+        ON i.AD_PInstance_ID=p.AD_PInstance_ID
+      WHERE i.AD_PInstance_ID=PInstance_ID
+      ORDER BY p.SeqNo
+      )
+    LOOP
+      v_Record_ID:=Cur_Parameter.Record_ID;
+    END LOOP; -- Get Parameter
+    DBMS_OUTPUT.PUT_LINE('  Record_ID=' || v_Record_ID) ;
+    
+    --RAISE_APPLICATION_ERROR(-20000,PInstance_ID);
+
+     -- Get Client ID
+    SELECT ad_client_id, ad_org_id INTO v_AD_Client_ID, v_AD_Org_ID FROM THR_im_time 
+	WHERE THR_im_time_id=v_Record_ID;
+
+    IF ( v_AD_Client_ID IS NULL OR v_AD_Org_ID IS NULL ) THEN 
+        v_exception :=  'Invalid Client/Organisation';   
+	RAISE_APPLICATION_ERROR(-20000,v_exception);
+    END IF;
+
+
+  FOR AttendanceListVal IN 
+  (
+	SELECT THR_im_time_id, ad_client_id, ad_org_id, employeeid, punchdate, punchin, punchout
+	FROM THR_im_time WHERE ad_client_id= v_AD_Client_ID 
+		AND ad_org_id IN ( v_AD_Org_ID, '0')
+
+  )
+  LOOP
+
+  IF (AttendanceListVal.ad_org_id = '0') THEN
+  	v_attendaceErrorNotice := v_attendaceErrorNotice || '* Organisation is not allowed- ';
+  END IF;
+   
+  IF (AttendanceListVal.employeeid IS NULL OR TRIM(BOTH ' ' FROM AttendanceListVal.employeeid) = '') THEN
+  	v_missingErrorNotice := v_missingErrorNotice || 'Employee ID, ';
+  END IF;
+
+  IF (AttendanceListVal.punchdate IS NULL ) THEN
+  	v_missingErrorNotice := v_missingErrorNotice || 'Punch Date, ';
+  END IF;
+
+  IF (AttendanceListVal.punchin IS NULL OR TRIM(BOTH ' ' FROM AttendanceListVal.punchin) = '') THEN
+  	v_missingErrorNotice := v_missingErrorNotice || 'Punch In, ';
+  END IF;
+
+  IF (AttendanceListVal.punchout IS NULL OR TRIM(BOTH ' ' FROM AttendanceListVal.punchout) = '') THEN
+  	v_missingErrorNotice := v_missingErrorNotice || 'Punch Out, ';
+  END IF;
+
+ -- v_punchin := to_timestamp(AttendanceListVal.punchin, 'HH24:MI:SS');
+  
+ -- v_punchout := to_timestamp(AttendanceListVal.punchout, 'HH24:MI:SS');
+--Oracle compatable
+  --select to_number(split_part(AttendanceListVal.punchin, ':', 1), '99') INTO v_hr FROM DUAL;
+  select to_number(substr(AttendanceListVal.punchin,1,instr(AttendanceListVal.punchin,':')-1),'99') INTO v_hr from DUAL;
+
+ IF( v_hr >= 24 ) THEN
+
+	v_notExistErrorNotice := v_notExistErrorNotice || 'Invalid Punch In Time,  ';
+	
+  END IF;
+--Oracle compatable
+  --select to_number(split_part(AttendanceListVal.punchout, ':', 1), '99') INTO v_hr FROM DUAL;
+  select to_number(substr(AttendanceListVal.punchout,1,instr(AttendanceListVal.punchout,':')-1),'99') INTO v_hr from DUAL;
+
+  IF( v_hr  >= 24 ) THEN
+
+	v_notExistErrorNotice := v_notExistErrorNotice || 'Invalid Punch Out Time,  ';
+	
+  END IF;
+  
+    SELECT COUNT(*) AS total INTO v_countDupEmp FROM THR_im_time 
+	WHERE employeeid = AttendanceListVal.employeeid 
+	AND punchdate = AttendanceListVal.punchdate 
+	AND ad_client_id=AttendanceListVal.ad_client_id 
+	AND ad_org_id=AttendanceListVal.ad_org_id;
+  
+  IF (v_countDupEmp > 1 ) THEN
+	v_attendaceErrorNotice := v_attendaceErrorNotice ||'Employee ID and Punch Dates are repeated @';
+	END IF; 
+
+
+ SELECT COUNT(*) AS total INTO v_count from shr_employee 
+		WHERE documentno=AttendanceListVal.employeeid 
+		AND ad_client_id=AttendanceListVal.ad_client_id 
+		AND ad_org_id IN (AttendanceListVal.ad_org_id,'0');    
+     
+
+	IF(v_count = 0 ) THEN
+
+	v_notExistErrorNotice := v_notExistErrorNotice || 'Invalid Employee ID';
+
+	ELSE
+  
+  
+  
+  SELECT SHR_Employee_ID INTO v_SHR_Employee_ID FROM SHR_Employee 
+		WHERE documentno=AttendanceListVal.employeeid 
+		AND ad_client_id=AttendanceListVal.ad_client_id  
+		AND ad_org_id IN (AttendanceListVal.ad_org_id,'0');
+    
+    SELECT COUNT(*) AS total1 INTO v_countDupEmp1 FROM shr_emp_punch 
+	WHERE shr_employee_id = v_SHR_Employee_ID  
+	AND punchdate = AttendanceListVal.punchdate 
+	AND ad_client_id=AttendanceListVal.ad_client_id 
+	AND ad_org_id=AttendanceListVal.ad_org_id;
+  
+
+	IF (v_countDupEmp1 != 0 ) THEN
+	v_attendaceErrorNotice := v_attendaceErrorNotice ||'Employee ID and Punch Dates exists in Punch In/Out @';
+	END IF;
+
+
+	--IF changes
+SELECT count(*) INTO v_emp_job_cnt FROM shr_emp_job WHERE shr_employee_id = v_SHR_Employee_ID;
+	IF(v_emp_job_cnt = 0) THEN
+
+	v_attendaceErrorNotice := v_attendaceErrorNotice ||'Workshift is not assigned @';
+	
+	END IF;
+  
+  
+  END IF;
+  
+  
+--IF changes
+SELECT count(*) INTO v_attendance_status_cnt FROM shr_attendance_status WHERE ispresent='Y' AND ad_client_id=AttendanceListVal.ad_client_id AND ad_org_id IN (AttendanceListVal.ad_org_id,'0');
+	IF(v_attendance_status_cnt = 0) THEN
+
+	v_attendaceErrorNotice := v_attendaceErrorNotice ||'Attendance Status is not defined @';
+	
+	END IF;
+  
+ 
+  
+	/*IF (v_missingErrorNotice IS NOT NULL OR v_missingErrorNotice!='') THEN
+  	  v_messageImport := v_messageImport || v_missingErrorNotice || 'is Mandatory ';
+	END IF;
+  
+	IF (v_attendaceErrorNotice IS NOT NULL OR v_attendaceErrorNotice!='' ) THEN
+  	  v_messageImport := v_messageImport || v_attendaceErrorNotice;
+	END IF;
+  
+	IF (v_notExistErrorNotice IS NOT NULL OR v_notExistErrorNotice!='') THEN
+  	  v_messageImport := v_messageImport || v_notExistErrorNotice;
+	END IF;
+  
+    
+	-----Enter the errors
+	IF( v_messageImport IS NOT NULL OR v_messageImport IS NOT NULL )THEN*/
+  
+ 
+  
+       IF (v_missingErrorNotice IS NULL) THEN
+       
+       v_missingErrorNotice:='';
+
+	ELSE
+  	  v_messageImport := v_messageImport || v_missingErrorNotice || 'is Mandatory ';
+	END IF;
+
+	if v_messageImport = 'is Mandatory 'THEN
+		v_messageImport :='';
+	END IF;
+  
+	IF (v_attendaceErrorNotice IS NULL) THEN
+ v_missingErrorNotice:='';
+	ELSE
+  	  v_messageImport := v_messageImport || v_attendaceErrorNotice;
+	END IF;
+  
+	IF (v_notExistErrorNotice IS NULL) THEN
+ v_missingErrorNotice:='';
+	ELSE
+  	  v_messageImport := v_messageImport || v_notExistErrorNotice;
+	END IF;
+  
+    
+	-----Enter the errors
+	IF (v_messageImport IS NULL OR v_messageImport='')THEN
+
+	UPDATE THR_im_time SET errormsg = v_messageImport, validated = 'Y' 
+			WHERE THR_im_time.THR_im_time_id=AttendanceListVal.THR_im_time_id;
+  
+       	ELSE 
+       	 UPDATE THR_im_time SET errormsg = v_messageImport, validated = 'N' 
+			WHERE THR_im_time.THR_im_time_id=AttendanceListVal.THR_im_time_id;
+		 v_flag :=FALSE;
+		
+	END IF;
+	
+	v_missingErrorNotice := '';
+	v_attendaceErrorNotice := '';
+	v_messageImport := '';	
+  v_notExistErrorNotice := '';
+        
+	END LOOP;
+	
+	IF v_flag = FALSE THEN
+		v_Message:='Please Check Error Mesg for Validation Issue'; 	
+    	--RAISE_APPLICATION_ERROR(-20000,v_Message);
+    
+        END IF;
+  
+    --<<FINISH_PROCESS>>
+    --  Update AD_PInstance
+    DBMS_OUTPUT.PUT_LINE('Updating PInstance - Finished ' || v_Message) ;
+    AD_UPDATE_PINSTANCE(PInstance_ID, NULL, 'N', 1, v_Message) ;
+    RETURN;
+  END; --BODY
+EXCEPTION
+WHEN OTHERS THEN
+  v_ResultStr:= '@ERROR=' || SQLERRM;
+  DBMS_OUTPUT.PUT_LINE(v_ResultStr) ;
+  AD_UPDATE_PINSTANCE(PInstance_ID, NULL, 'N', 0, v_ResultStr) ;
+  RETURN;
+END THR_ATTENDANCELISTVAL
+]]></body>
+    </function>
+  </database>

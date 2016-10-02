@@ -1,0 +1,143 @@
+<?xml version="1.0"?>
+  <database name="TRIGGER THR_EMPL_ENDOFSERVICELINE_TRG">
+    <trigger name="THR_EMPL_ENDOFSERVICELINE_TRG" table="THR_EMPL_ENDOFSERVICELINE" fires="after" insert="true" update="true" delete="false" foreach="row">
+      <body><![CDATA[
+    /*************************************************************************
+    * The contents of this file are subject to the Openbravo  Public  License
+    * Version  1.1  (the  "License"),  being   the  Mozilla   Public  License
+    * Version 1.1  with a permitted attribution clause; you may not  use this
+    * file except in compliance with the License. You  may  obtain  a copy of
+    * the License at http://www.openbravo.com/legal/license.html
+    * Software distributed under the License  is  distributed  on  an "AS IS"
+    * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+    * License for the specific  language  governing  rights  and  limitations
+    * under the License.
+    * The Original Code is Openbravo ERP.
+    * The Initial Developer of the Original Code is Openbravo SLU
+    * All portions are Copyright (C) 2001-2013 Openbravo SLU
+    * All Rights Reserved.
+    * Contributor(s): Mohammad Abu Naser, Tasawr Interective.
+    ************************************************************************/ 
+  v_count NUMBER;
+  CUR_PARAMETER_EOSP RECORD;
+  v_benefit_amount NUMBER:=0;
+  CUR_PARAMETER_EOS RECORD;
+ v_no_years  NUMBER(14,12):=0;
+
+ v_thr_em_department_id character varying(32);
+  v_thr_em_designation_id character varying(32);
+  v_date_of_joining timestamp without time zone;
+  v_date_of_leaving timestamp without time zone;
+  v_end_of_service timestamp without time zone;
+   v_claiming_year NUMBER(14,4):=0;
+   v_gross_amount  NUMBER(14,2):=0;
+   v_adjust_year NUMBER(14,4):=0;
+   v_incr_amount NUMBER(14,2):=0;
+   V_LOANAMT NUMBER(10,2):=0;
+BEGIN
+
+  IF AD_isTriggerEnabled()='N' THEN RETURN;
+  END IF;
+
+  IF ( INSERTING) OR  ( UPDATING) THEN
+
+ 
+
+     SELECT count(*)
+     INTO v_count
+     FROM thr_empl_endofservice
+     WHERE thr_empl_endofservice_id=:NEW.thr_empl_endofservice_id;
+     
+IF coalesce(v_count,0)=1 THEN
+     select 
+  thr_em_department_id,
+  thr_em_designation_id,
+  date_of_joining
+  INTO  v_thr_em_department_id,
+  v_thr_em_designation_id,
+  v_date_of_joining
+FROM THR_EMPL_INFO
+where THR_EMPL_INFO_id=:NEW.THR_EMPL_INFO_id;
+
+
+UPDATE thr_empl_endofservice 
+SET 
+thr_em_department_id=v_thr_em_department_id, 
+
+thr_em_designation_id=v_thr_em_designation_id, 
+date_of_joining=v_date_of_joining
+--date_of_leaving=to_date(now())
+--end_of_service=COALESCE(NEW.end_of_service, to_date(now()))
+where THR_EMPL_INFO_id=:NEW.THR_EMPL_INFO_id 
+and thr_empl_endofservice_id=:NEW.thr_empl_endofservice_id;
+	FOR CUR_PARAMETER_EOSP IN (
+		select * from thr_empl_endofservice where thr_empl_endofservice_id = :new.thr_empl_endofservice_id
+		)
+		LOOP
+				
+	END LOOP;
+		SELECT grossamt INTO v_gross_amount 
+		FROM thr_empl_salary 
+		WHERE thr_empl_info_id=:NEW.thr_empl_info_id;
+
+
+		-- Calculate No. of Years --------------
+		select TO_NUMBER((date_of_leaving - date_of_joining )/365.25)
+		INTO v_no_years 
+		from thr_empl_endofservice
+		where  thr_empl_info_id=:NEW.thr_empl_info_id;
+
+		SELECT claiming_year into v_claiming_year from THR_EMPL_EOS;
+		
+		v_benefit_amount:=0;
+		v_adjust_year:=0;
+
+IF COALESCE(v_no_years,0) > COALESCE(v_claiming_year,0) THEN
+
+	FOR CUR_PARAMETER_EOS IN (
+		select el.year_from, el.year_to, el.percentage, el.* from thr_empl_eos e,  thr_empl_eosline el where 
+		e.thr_empl_eos_id = el.thr_empl_eos_id
+		and COALESCE(el.isresgine,'N')=COALESCE(CUR_PARAMETER_EOSP.isresign,'N')
+		ORDER BY el.year_from
+		)
+		loop
+
+
+			       IF COALESCE(CUR_PARAMETER_EOS.year_to,0) > COALESCE(v_no_years,0) THEN
+					v_benefit_amount:=COALESCE(v_benefit_amount,0)+COALESCE(v_gross_amount,0)*(COALESCE(CUR_PARAMETER_EOS.percentage,0)/100)*(COALESCE(v_no_years,0)-COALESCE(v_adjust_year,0));
+				ELSE
+				v_benefit_amount:=COALESCE(v_benefit_amount,0)+COALESCE(v_gross_amount,0)*(COALESCE(CUR_PARAMETER_EOS.percentage,0)/100)*(COALESCE(CUR_PARAMETER_EOS.year_to,0)-COALESCE(v_adjust_year,0));
+				v_benefit_amount:=COALESCE(v_benefit_amount,0)+COALESCE(v_gross_amount,0);
+				END IF;
+
+
+			v_adjust_year:=CUR_PARAMETER_EOS.year_to;
+			
+			
+		--End if;
+		END LOOP;
+		END IF;
+		/*select SUM(D.DUE_AMOUNT) INTO V_LOANAMT from 
+		thr_empl_loan_dtls d, thr_empl_loan_schdl s, THR_EMPL_SALARY SAL, thr_empl_loanadvance AD
+		WHERE s.thr_empl_loan_schdl_id=d.thr_empl_loan_schdl_id
+		AND sAL.THR_Empl_Info_ID=:NEW.THR_Empl_Info_ID
+		AND SAL.THR_EMPL_SALARY_ID=AD.THR_EMPL_SALARY_ID
+		AND AD.thr_empl_loanadvance_ID=S.thr_empl_loanadvance_ID
+		and status = 'DR';*/
+
+		UPDATE thr_empl_endofservice 
+		SET 
+		benefit_amount=round(v_benefit_amount) 
+		-- V_LOANAMT
+		where THR_EMPL_INFO_id=:NEW.THR_EMPL_INFO_id 
+		and thr_empl_endofservice_id=:NEW.thr_empl_endofservice_id;
+
+	
+    END IF; 
+   
+END IF;
+RETURN NEW;
+END THR_EMPL_ENDOFSERVICELINE_TRG
+]]></body>
+    </trigger>
+  </database>

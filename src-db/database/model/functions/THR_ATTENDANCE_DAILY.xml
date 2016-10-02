@@ -1,0 +1,137 @@
+<?xml version="1.0"?>
+  <database name="FUNCTION THR_ATTENDANCE_DAILY">
+    <function name="THR_ATTENDANCE_DAILY" type="NULL">
+      <parameter name="p_att_date" type="VARCHAR" mode="in">
+        <default/>
+      </parameter>
+      <body><![CDATA[-- Logistice
+	v_ResultStr VARCHAR2(2000):='';
+	v_Message VARCHAR2(2000):='';
+        v_attdaily_id VARCHAR(32);
+	Cur_Parameter_emp RECORD;
+	Cur_Parameter_att RECORD;
+	v_add_leave NUMBER(12,9);
+	
+    BEGIN  
+
+	FOR Cur_Parameter_emp IN
+	      ( SELECT i.THR_EMPL_INFO_ID,i.ad_client_id, i.ad_org_id, I.DOCUMENTNO, 
+		I.THR_EM_DESIGNATION_ID
+	      FROM THR_EMPL_INFO I 
+	      ORDER BY I.DOCUMENTNO
+	      )
+	 LOOP 
+		
+		    SELECT d.leave_limit INTO v_add_leave 
+		    from thr_empl_lp_details d , thr_empl_leave_plan p  
+		    where d.thr_empl_leave_plan_ID=p.thr_empl_leave_plan_id
+		    AND d.thr_eMPL_LEAVE_TYPE_ID =(SELECT thr_eMPL_LEAVE_TYPE_ID FROM thr_eMPL_LEAVE_TYPE WHERE IS_CARRY_FORWARD='Y')
+		    and d.description is not null;
+
+			--drop table thr_temp create table thr_temp (v_add_leave char); select * from thr_temp
+			
+		
+
+			
+			UPDATE thr_em_lv_acct_dtls  d
+			SET leave_balance = round((COALESCE(d.leave_balance,0) + (COALESCE(v_add_leave,0)/365::numeric)),2)
+			FROM thr_empl_lv_acct acc, thr_empl_info emp
+			WHERE d.thr_empl_lv_acct_id=acc.thr_empl_lv_acct_id
+			AND acc.thr_empl_info_ID=emp.thr_empl_info_ID--'CC39092452B348E7A67100AFB1CEA2B2'--
+			and acc.thr_empl_info_ID=Cur_Parameter_emp.thr_empl_info_ID--'CC39092452B348E7A67100AFB1CEA2B2'--Cur_Parameter_emp.thr_empl_info_ID
+			AND d.thr_eMPL_LEAVE_TYPE_ID = (SELECT thr_eMPL_LEAVE_TYPE_ID FROM thr_eMPL_LEAVE_TYPE WHERE IS_CARRY_FORWARD='Y');
+
+			--insert into temp values (v_add_leave);
+	    
+
+	    --select * from thr_eMPL_LEAVE_TYPE
+
+		v_attdaily_id:=get_uuid();
+	
+		
+
+		--new 
+/*
+
+		INSERT INTO thr_em_attn_proc(thr_em_attn_proc_id ,ad_org_id,ad_client_id,isactive,
+		 created ,createdby,updated,updatedby,
+		 thr_empl_info_id ,thr_em_department_id,attendance_date ,in_time,
+		 status,is_manual_attn,manual_reason,
+		  shift,over_time,late
+		 ) 
+		
+		(select get_uuid(),d.* from 
+		 (select 
+		  e.ad_org_id, e.ad_client_id, e.isactive,
+		 ar.created,e.createdby,ar.updated, e.updatedby,
+		 e.thr_empl_info_id,e.thr_em_department_id,trunc(ar.checktime),min(ar.checktime),
+		 'P','N',null,
+		 COALESCE(thr_get_holiday_shift_id(thr_em_sft_inf_id,trunc(ar.checktime)),thr_em_sft_inf_id),0,0
+		 	 from thr_empl_info e, thr_attendanceraw ar, thr_empl_shift es
+		 where e.documentno=ar.documentno
+		 and e.thr_empl_info_id=es.thr_empl_info_id
+		 and ar.checktype='I' 
+		 AND trunc(ar.checktime)>now()-5
+		 group by 
+		 e.ad_org_id, e.ad_client_id, e.isactive,
+		 ar.created,e.createdby,ar.updated, e.updatedby,
+		 e.thr_empl_info_id,trunc(ar.checktime),COALESCE(thr_get_holiday_shift_id(thr_em_sft_inf_id,trunc(ar.checktime)),thr_em_sft_inf_id)
+		 order by trunc(ar.checktime)
+		 ) d);
+		-- New
+
+		update thr_em_attn_proc pp set out_time=tt.checktime
+		from (
+		select att.thr_empl_info_id,att.attendance_date,att.shift,max(ar.checktime)  checktime
+		from thr_em_attn_proc att , thr_empl_info e,thr_empl_shift es,thr_attendanceraw ar
+		where att.thr_empl_info_id=e.thr_empl_info_id
+		and att.attendance_date = now()-1
+		--and att.shift=es.thr_em_sft_inf_id
+		and e.thr_empl_info_id = es.thr_empl_info_id
+		and e.documentno=ar.documentno
+		and trunc(att.attendance_date)=trunc(ar.checktime)
+		and ar.checktype='O'
+		group by 
+		att.thr_empl_info_id,att.attendance_date,att.shift) tt
+		where pp.thr_empl_info_id=tt.thr_empl_info_id
+		and pp.attendance_date=tt.attendance_date
+		and pp.shift=tt.shift
+		and trunc(tt.checktime)=now()-1;
+
+
+		INSERT INTO thr_em_attn_proc (thr_em_attn_proc_id ,ad_org_id,ad_client_id,isactive,
+		 created ,createdby,updated,updatedby,
+		 thr_empl_info_id ,thr_em_department_id,attendance_date ,out_time,
+		 status,is_manual_attn,manual_reason,
+		  shift,over_time,late)
+		  (select get_uuid(),d.* from 
+		 (select 
+		e.ad_org_id, e.ad_client_id, e.isactive,
+		 ar.created,e.createdby,ar.updated, e.updatedby,
+		 e.thr_empl_info_id,e.thr_em_department_id,trunc(ar.checktime),max(ar.checktime),
+		 'P','N',null,
+		 COALESCE(thr_get_holiday_shift_id(thr_em_sft_inf_id,trunc(ar.checktime)),thr_em_sft_inf_id),0,0
+		 	 from thr_empl_info e, thr_attendanceraw ar, thr_empl_shift es
+		 where e.documentno=ar.documentno
+		 and e.thr_empl_info_id=es.thr_empl_info_id
+		 and ar.checktype='O' 
+		 AND trunc(ar.checktime)=now()-1
+		 and (e.thr_empl_info_id, trunc(ar.checktime), es.thr_empl_shift_id) not in (select thr_empl_info_id, attendance_date, thr_empl_shift_id from thr_em_attn_proc)
+		 group by 
+		 e.ad_org_id, e.ad_client_id, e.isactive,
+		 ar.created,e.createdby,ar.updated, e.updatedby,
+		 e.thr_empl_info_id,trunc(ar.checktime),COALESCE(thr_get_holiday_shift_id(thr_em_sft_inf_id,trunc(ar.checktime)),thr_em_sft_inf_id)
+		 ) d);
+*/
+	end loop;
+	--PERFORM thr_attendacestatus_update('') ;
+    v_Message := ' Daily Attendance Processed';
+EXCEPTION
+WHEN OTHERS THEN
+  v_ResultStr:= '@ERROR=' || SQLERRM;
+  DBMS_OUTPUT.PUT_LINE(v_ResultStr) ;
+  RETURN;
+END THR_ATTENDANCE_DAILY
+]]></body>
+    </function>
+  </database>

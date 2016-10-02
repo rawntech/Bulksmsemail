@@ -1,0 +1,186 @@
+<?xml version="1.0"?>
+  <database name="FUNCTION THR_ATTENDACESTATUS_UPDATE">
+    <function name="THR_ATTENDACESTATUS_UPDATE" type="NULL">
+      <parameter name="p_att_date" type="VARCHAR" mode="in">
+        <default/>
+      </parameter>
+      <body><![CDATA[-- Logistice
+	v_ResultStr VARCHAR2(2000):='';
+	v_Message VARCHAR2(2000):='';
+        v1 NUMBER:=0;
+        v2 NUMBER:=0;
+	v3 NUMBER:=0;
+        v NUMBER:=0;
+        v_att_date date:=now()-01;
+	CUR_PARAMETER_EMP RECORD;
+	v_latemin NUMBER:=0;
+	v_earlymin NUMBER:=0;
+	v_comingearlymin NUMBER:=0;
+	v_earlyleftmin NUMBER:=0;
+	v_overstayingmin NUMBER:=0;
+	v_workingdays NUMBER:=0;
+	v_overtimemin NUMBER:=0;
+	v_durationmin NUMBER:=0;
+	v_workingmin NUMBER:=0;
+
+	v_punch_count NUMBER;
+
+	vv_latemin VARCHAR(20);
+	vv_earlymin VARCHAR(20);
+	vv_comingearlymin VARCHAR(20);
+	vv_earlyleftmin VARCHAR(20);
+	vv_overstayingmin VARCHAR(20);
+	vv_workingdays VARCHAR(20);
+	vv_overtimemin VARCHAR(20);
+	vv_durationmin VARCHAR(20);
+	vv_workingmin VARCHAR(20);
+	v_att_intime timestamp without time zone;
+	v_att_outtime timestamp without time zone;
+	vc_intime timestamp without time zone;
+	vc_outime  timestamp without time zone;
+	vc_thr_em_sft_inf_id VARCHAR(32);
+	
+    BEGIN
+
+	v_latemin :=0;
+	v_earlymin :=0;
+	v_comingearlymin :=0;
+	v_earlyleftmin :=0;
+	v_overstayingmin :=0;
+	v_workingdays :=0;
+	v_overtimemin :=0;
+
+--date
+--Shift Change ---
+--Shift- employee - DATE with shift in time and out time
+--
+
+
+   FOR CUR_PARAMETER_EMP IN (select e.thr_empl_info_id, es.thr_em_sft_inf_id, es.in_time esintime,
+			    sf.from_time, sf.to_time, sf.is_partial,
+			    es.out_time esouttime,sf.grace_period,es.working_days,es.ot_hr,sf.missing_punch_in_out
+			    from thr_empl_info e,thr_empl_shift es,thr_em_sft_inf sf
+			    where e.thr_empl_info_id=es.thr_empl_info_id 
+			    and es.thr_em_sft_inf_id=sf.thr_em_sft_inf_id
+			    and es.start_date=(select max(start_date) from thr_empl_shift 
+			    where thr_empl_info_id=e.thr_empl_info_id and start_date<=v_att_date)
+    )
+   loop
+	vc_intime:=CUR_PARAMETER_EMP.esintime;
+	vc_outime :=CUR_PARAMETER_EMP.esouttime;
+	vc_thr_em_sft_inf_id:=CUR_PARAMETER_EMP.thr_em_sft_inf_id;
+	IF vc_thr_em_sft_inf_id!=COALESCE(thr_get_holiday_shift_id(vc_thr_em_sft_inf_id,v_att_date),vc_thr_em_sft_inf_id) then
+	vc_thr_em_sft_inf_id:=thr_get_holiday_shift_id(vc_thr_em_sft_inf_id,v_att_date);
+
+	select from_time, to_time INTO vc_intime, vc_outime from thr_em_sft_inf
+	where thr_em_sft_inf_id=vc_thr_em_sft_inf_id;
+	END IF;
+   
+   
+    
+	select in_time, out_time into v_att_intime, v_att_outtime
+	from thr_em_attn_proc eap
+	where eap.thr_empl_info_id=CUR_PARAMETER_EMP.thr_empl_info_id
+	and eap.shift=COALESCE(thr_get_holiday_shift_id(CUR_PARAMETER_EMP.thr_em_sft_inf_id,trunc(eap.attendance_date)),CUR_PARAMETER_EMP.thr_em_sft_inf_id)--CUR_PARAMETER_EMP.thr_em_sft_inf_id
+	and eap.attendance_date=v_att_date;
+
+	select count(*) into v_punch_count
+	from thr_em_attn_proc eap 
+	where  eap.thr_empl_info_id=CUR_PARAMETER_EMP.thr_empl_info_id
+	and eap.shift=COALESCE(thr_get_holiday_shift_id(CUR_PARAMETER_EMP.thr_em_sft_inf_id,trunc(eap.attendance_date)),CUR_PARAMETER_EMP.thr_em_sft_inf_id)--CUR_PARAMETER_EMP.thr_em_sft_inf_id
+	and eap.attendance_date=v_att_date
+	and (in_time is null 
+	or 
+	out_time is null);
+	
+	if v_punch_count > 0 then
+	
+	v_workingdays:=CUR_PARAMETER_EMP.working_days*CUR_PARAMETER_EMP.missing_punch_in_out;
+	else 
+	v_workingdays:=CUR_PARAMETER_EMP.working_days;
+	end if ;
+		
+	vv_latemin:=to_char(to_timestamp(to_char(v_att_intime,'YYYY-MM-DD HH24:MI:SS'),'YYYY-MM-DD HH24:MI:SS')-(to_timestamp(to_char(to_char(v_att_date,'YYYY-MM-DD ')||to_char(vc_intime,'HH24:MI:SS')),'YYYY-MM-DD HH24:MI:SS')),'HH24:MI:SS');
+	
+	v_latemin:=coalesce(to_number(substr(vv_latemin,1,2))*60,0)+coalesce(to_number(substr(vv_latemin,4,2)),0);
+		if coalesce(CUR_PARAMETER_EMP.grace_period,0)<coalesce(v_latemin,0) then
+			v_latemin:=v_latemin;
+		else
+			v_latemin:=0;
+		end if;
+
+
+
+
+	vv_earlymin:=to_char(to_timestamp(to_char(to_char(v_att_date,'YYYY-MM-DD ')||to_char(vc_intime,'HH24:MI:SS')),'YYYY-MM-DD HH24:MI:SS')-(to_timestamp(to_char(v_att_intime,'YYYY-MM-DD HH24:MI:SS'),'YYYY-MM-DD HH24:MI:SS')),'HH24:MI:SS');
+	
+	v_earlymin:=coalesce(to_number(substr(vv_earlymin,1,2))*60,0)+coalesce(to_number(substr(vv_earlymin,4,2)),0);
+	--
+
+	if v_earlymin>0 then
+	v_earlymin:=v_earlymin;
+	else 
+	v_earlymin:=0;
+	end if;
+
+
+			
+	vv_earlyleftmin:=to_char(to_timestamp(to_char(to_char(v_att_date,'YYYY-MM-DD ')||to_char(vc_outime,'HH24:MI:SS')),'YYYY-MM-DD HH24:MI:SS')-(to_timestamp(to_char(v_att_outtime,'YYYY-MM-DD HH24:MI:SS'),'YYYY-MM-DD HH24:MI:SS')),'HH24:MI:SS');
+	v_earlyleftmin:=coalesce(to_number(substr(vv_earlyleftmin,1,2))*60,0)+coalesce(to_number(substr(vv_earlyleftmin,4,2)),0);
+
+	if v_earlyleftmin>0 then 
+	v_earlyleftmin:=v_earlyleftmin;
+	else
+	v_earlyleftmin:=0;
+	end if;
+
+	vv_overstayingmin:=to_char(to_timestamp(to_char(v_att_outtime,'YYYY-MM-DD HH24:MI:SS'),'YYYY-MM-DD HH24:MI:SS')-(to_timestamp(to_char(to_char(v_att_date,'YYYY-MM-DD ')||to_char(vc_outime,'HH24:MI:SS')),'YYYY-MM-DD HH24:MI:SS')),'HH24:MI:SS');
+	v_overstayingmin:=coalesce(to_number(substr(vv_overstayingmin,1,2))*60,0)+coalesce(to_number(substr(vv_overstayingmin,4,2)),0);
+
+	if v_overstayingmin>0 then 
+	v_overstayingmin:=v_overstayingmin;
+	else
+	v_overstayingmin:=0;
+	end if;
+
+	if CUR_PARAMETER_EMP.ot_hr >0 then 
+
+	vv_durationmin:=to_char(to_timestamp(to_char(vc_outime,'YYYY-MM-DD HH24:MI:SS'),'YYYY-MM-DD HH24:MI:SS')-(to_timestamp(to_char(vc_intime,'YYYY-MM-DD HH24:MI:SS'),'YYYY-MM-DD HH24:MI:SS')),'HH24:MI:SS');
+
+	v_durationmin:=((coalesce(to_number(substr(vv_durationmin,1,2))*60,0)+coalesce(to_number(substr(vv_durationmin,4,2)),0))/60);
+	vv_workingmin:=to_char(to_timestamp(to_char(v_att_outtime,'YYYY-MM-DD HH24:MI:SS'),'YYYY-MM-DD HH24:MI:SS')-(to_timestamp(to_char(v_att_intime,'YYYY-MM-DD HH24:MI:SS'),'YYYY-MM-DD HH24:MI:SS')),'HH24:MI:SS');
+	
+	v_workingmin:=((coalesce(to_number(substr(vv_workingmin,1,2))*60,0)+coalesce(to_number(substr(vv_workingmin,4,2)),0))/60);
+
+	v_overtimemin:=(v_workingmin-v_durationmin);
+
+	if v_overtimemin > CUR_PARAMETER_EMP.ot_hr then
+	
+	v_overtimemin:=CUR_PARAMETER_EMP.ot_hr;
+
+	elsif  v_overtimemin > 0 then
+	v_overtimemin:=v_overtimemin;
+	else
+	v_overtimemin:=0;
+	end if;
+	end if;
+	
+
+	update thr_em_attn_proc att set late =v_latemin ,over_time=v_overtimemin,
+	early_min=v_earlymin,comming_early=v_earlymin,early_left=v_earlyleftmin,
+	staying_late=v_overstayingmin,woking_days=v_workingdays
+	where att.thr_empl_info_id=CUR_PARAMETER_EMP.thr_empl_info_id
+	and att.shift=COALESCE(thr_get_holiday_shift_id(CUR_PARAMETER_EMP.thr_em_sft_inf_id,trunc(att.attendance_date)),CUR_PARAMETER_EMP.thr_em_sft_inf_id)--CUR_PARAMETER_EMP.thr_em_sft_inf_id
+	and att.attendance_date=v_att_date;
+	
+	END LOOP;
+    v_Message := ' Daily Attendance Processed';
+EXCEPTION
+WHEN OTHERS THEN
+  v_ResultStr:= '@ERROR=' || SQLERRM;
+  DBMS_OUTPUT.PUT_LINE(v_ResultStr) ;
+  RETURN;
+END THR_ATTENDACESTATUS_UPDATE
+]]></body>
+    </function>
+  </database>

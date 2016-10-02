@@ -1,0 +1,89 @@
+<?xml version="1.0"?>
+  <database name="FUNCTION THR_ISMANAGERCHILDTEAM">
+    <function name="THR_ISMANAGERCHILDTEAM" type="NUMERIC">
+      <parameter name="p_teamid" type="VARCHAR" mode="in">
+        <default/>
+      </parameter>
+      <parameter name="p_clientid" type="VARCHAR" mode="in">
+        <default/>
+      </parameter>
+      <parameter name="p_userid" type="VARCHAR" mode="in">
+        <default/>
+      </parameter>
+      <body><![CDATA[/*************************************************************************
+* The contents of this file are subject to the Openbravo  Public  License
+* Version  1.1  (the  "License"),  being   the  Mozilla   Public  License
+* Version 1.1  with a permitted attribution clause; you may not  use this
+* file except in compliance with the License. You  may  obtain  a copy of
+* the License at http://www.openbravo.com/legal/license.html
+* Software distributed under the License  is  distributed  on  an "AS IS"
+* basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+* License for the specific  language  governing  rights  and  limitations
+* under the License.
+* The Original Code is Openbravo ERP.
+* The Initial Developer of the Original Code is Openbravo SLU
+* All portions are Copyright (C) 2009 Openbravo SLU
+* All Rights Reserved.
+* Contributor(s):  ______________________________________.
+************************************************************************/
+
+  v_Level NUMBER:=0;
+  v_count NUMBER;
+  v_treeID VARCHAR2(32) ;
+  v_Parent VARCHAR(32) ;--OBTG:VARCHAR2--
+  v_ParentTeam VARCHAR(32) ;--OBTG:VARCHAR2--
+  v_Node   VARCHAR(32) ;--OBTG:VARCHAR2--
+  TYPE RECORD IS REF CURSOR;
+  Cur_TeamManager RECORD;
+
+
+BEGIN
+
+ /*    SELECT count(*)
+     INTO v_count
+     FROM AD_TREE
+     WHERE treetype='THR_TE'
+     AND AD_Client_ID=p_clientID;
+
+   IF (v_count<>1) THEN
+     IF (v_count=0) THEN
+       RAISE_APPLICATION_ERROR(-20000, 'THR_noteamtree');
+     ELSE 
+       RAISE_APPLICATION_ERROR(-20000, 'THR_morethanonetree');
+     END IF;
+   ELSE
+     SELECT max(AD_TREE_ID)
+     INTO v_TreeID
+     FROM AD_TREE
+     WHERE treetype='THR_TE'
+     AND AD_CLIENT_ID=p_clientID;
+*/
+      FOR Cur_TeamManager IN
+        (select distinct thr_em_department_id
+          	from thr_em_department 
+	         where currentmanager in (SELECT THR_EMPl_INFO_ID FROM THR_EMPl_INFO WHERE C_BPartner_ID IN (SELECT C_BPartner_ID FROM AD_User WHERE AD_User_ID = p_UserID))
+        )
+      LOOP
+        v_ParentTeam:=Cur_TeamManager.thr_em_department_id;
+        v_parent:=p_teamID;
+	WHILE v_Parent IS NOT NULL
+	LOOP
+		v_Level:=v_Level + 1;
+		SELECT MAX(NODE_ID),
+		  MAX(PARENT_ID)
+		  INTO v_Node,
+		  v_Parent
+		  FROM AD_TREENODE
+		  WHERE AD_TREE_ID=v_treeID
+		  AND NODE_ID=v_Parent;
+		IF v_Node=v_ParentTeam THEN
+			RETURN v_Level;
+		END IF;
+	END LOOP;
+      END LOOP;
+  --END IF;
+   RETURN(-1) ;
+END THR_ISMANAGERCHILDTEAM
+]]></body>
+    </function>
+  </database>

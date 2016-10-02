@@ -1,0 +1,161 @@
+<?xml version="1.0"?>
+  <database name="TRIGGER THR_APPLICANT_TRG">
+    <trigger name="THR_APPLICANT_TRG" table="THR_APPLICANT" fires="after" insert="true" update="true" delete="true" foreach="row">
+      <body><![CDATA[
+    /*************************************************************************
+    * The contents of this file are subject to the Openbravo  Public  License
+    * Version  1.1  (the  "License"),  being   the  Mozilla   Public  License
+    * Version 1.1  with a permitted attribution clause; you may not  use this
+    * file except in compliance with the License. You  may  obtain  a copy of
+    * the License at http://www.openbravo.com/legal/license.html
+    * Software distributed under the License  is  distributed  on  an "AS IS"
+    * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+    * License for the specific  language  governing  rights  and  limitations
+    * under the License.
+    * The Original Code is Openbravo ERP.
+    * The Initial Developer of the Original Code is Openbravo SLU
+    * All portions are Copyright (C) 2001-2013 Openbravo SLU
+    * All Rights Reserved.
+    * Contributor(s): Mohammad Abu Naser, Tasawr Interective.
+    ************************************************************************/ 
+  v_employeeinfo_ID VARCHAR(32);
+  v_emppersonalinfo_ID VARCHAR(32);
+  v_employeejob_ID VARCHAR(32);
+  v_employeeedu_ID VARCHAR(32);
+  CUR_PARAMETER_APP RECORD;
+  CUR_PARAMETER_JOBH RECORD;
+  CUR_PARAMETER_EDU RECORD;
+ 
+  v_count NUMBER;
+ 
+   
+BEGIN
+    
+ IF AD_isTriggerEnabled()='N' THEN RETURN;
+  END IF;
+
+  IF (INSERTING OR UPDATING) THEN
+
+   
+	     SELECT count(*)
+	     INTO v_count
+	     FROM thr_applicant
+	     WHERE thr_applicant_id=:NEW.thr_applicant_id;
+
+	     if coalesce(v_count,0)=1 then
+		 
+		if :new.isapproved='Y' then
+		--update thr_empl_info set isleaveaccount = 'Y' where thr_empl_info_id = new.thr_empl_info_id;
+
+			FOR CUR_PARAMETER_APP IN (
+				select * from thr_applicant where thr_applicant_id = :new.thr_applicant_id
+				)
+			loop
+
+			  v_employeeinfo_ID:=get_uuid();
+
+			INSERT INTO thr_empl_info
+			(
+			  thr_empl_info_id,ad_client_id,ad_org_id,isactive,created,createdby,updated,updatedby,
+			  documentno,firstname,middlename,lastname,known_as,email,alternateemail,phoneno,
+			  alternatephoneno,mobileno,emergencyphoneno,ad_image_id,thr_em_department_id,
+			  thr_em_designation_id,thr_empl_pay_grade_id,salary_amount,bonus_percent,available_for,
+			  standard_hours,date_of_joining,date_of_leaving,status,description,bank_name,accountno,isleaveaccount,
+			  c_bpartner_id,name_ar,official_sponser,liability,is_applicant
+			  
+			
+			) 
+			VALUES 
+			(
+			   v_employeeinfo_ID,CUR_PARAMETER_APP.ad_client_ID,CUR_PARAMETER_APP.ad_org_id,'Y',now(),:new.CreatedBy,now(),:new.createdBy,
+			   (select max(to_number(documentno))+1 from thr_empl_info),CUR_PARAMETER_APP.app_name,null,' ',CUR_PARAMETER_APP.app_name,CUR_PARAMETER_APP.email,null,null,
+			   null,CUR_PARAMETER_APP.mobile,null,null,CUR_PARAMETER_APP.thr_em_department_id,
+			   CUR_PARAMETER_APP.thr_em_designation_id,CUR_PARAMETER_APP.thr_empl_pay_grade_id,CUR_PARAMETER_APP.expected_salary,0,null,
+			   0,now(),null,'permanent',null,null,null,'N',
+			   null,null,null,null,'Y'
+			   
+			);
+
+			-- personal info
+			v_emppersonalinfo_ID:=get_uuid();
+	  
+			INSERT INTO thr_empl_personal
+			(
+			  thr_empl_personal_id,ad_client_id,ad_org_id,isactive,created,createdby,updated,updatedby,
+			  fathername,mothername,spousename,nickname,birthday,age,gender, 
+			  maritalstatus ,dependents,bloodgroup,birthplace,religion,
+			  c_country_id,
+			  thr_empl_info_id
+			) 
+			VALUES 
+			(
+			  v_emppersonalinfo_ID,CUR_PARAMETER_APP.ad_client_ID,CUR_PARAMETER_APP.ad_org_id,'Y',now(),:new.CreatedBy,now(),:new.createdBy,
+			  CUR_PARAMETER_APP.father_name,CUR_PARAMETER_APP.mother_name,null,null,CUR_PARAMETER_APP.birth_date,0,CUR_PARAMETER_APP.gender,
+			  CUR_PARAMETER_APP.marital_status,0,null,null,CUR_PARAMETER_APP.religion,
+			  CUR_PARAMETER_APP.nationality,
+			  v_employeeinfo_ID
+			   
+			);
+			
+				--Job hostory
+				FOR CUR_PARAMETER_JOBH IN (
+					select * from thr_app_employment where thr_applicant_id = :new.thr_applicant_id
+					)
+					loop
+				v_employeejob_ID:=get_uuid();
+
+				INSERT INTO thr_empl_jh
+				(
+				thr_empl_jh_id ,ad_org_id,ad_client_id,isactive,created,createdby,updated,updatedby,
+				thr_empl_info_id,company_name,company_business,company_location,department,
+				position_held,area_of_exp,responsibilities,worked_from,worked_to
+				)
+				values
+				(
+				v_employeejob_ID,CUR_PARAMETER_JOBH.ad_org_id,CUR_PARAMETER_JOBH.ad_client_id,'Y',now(),:new.CreatedBy,now(),:new.createdBy,
+				v_employeeinfo_ID,CUR_PARAMETER_JOBH.company_name,CUR_PARAMETER_JOBH.company_business,
+				CUR_PARAMETER_JOBH.company_location,CUR_PARAMETER_JOBH.department,
+				CUR_PARAMETER_JOBH.position_held,null,CUR_PARAMETER_JOBH.responsibilities,
+				CUR_PARAMETER_JOBH.worked_from,CUR_PARAMETER_JOBH.worked_to
+				);
+
+						--Education
+					
+						FOR CUR_PARAMETER_EDU IN (
+							select * from thr_app_education where thr_applicant_id = :new.thr_applicant_id
+							)
+							loop
+						v_employeeedu_ID:=get_uuid();
+
+						INSERT INTO thr_empl_education
+						(
+						thr_empl_education_id,ad_org_id,ad_client_id,isactive,created,createdby,updated,updatedby,
+						thr_empl_info_id,level_of_education,exam_or_degree_title,concentration_major_group,
+						institute_name,result,year_of_passing,duration,acheivement
+						)
+						values
+						(
+						v_employeeedu_ID,CUR_PARAMETER_EDU.ad_org_id,CUR_PARAMETER_EDU.ad_client_id,'Y',now(),:new.CreatedBy,now(),:new.createdBy,
+						v_employeeinfo_ID,CUR_PARAMETER_EDU.level_of_education,CUR_PARAMETER_EDU.exam_or_degree_title,
+						CUR_PARAMETER_EDU.concentration_major_group,CUR_PARAMETER_EDU.institute_name,
+						CUR_PARAMETER_EDU.result,CUR_PARAMETER_EDU.year_of_passing,CUR_PARAMETER_EDU.duration,
+						CUR_PARAMETER_EDU.acheivement
+						);
+						
+						End loop;
+				End loop;		
+	
+			End loop;
+		
+		End if ;
+		
+	End if ;
+	
+  END IF;
+		/*update thr_applicant set thr_empl_info_id=v_employeeinfo_ID
+		WHERE thr_applicant_id=:NEW.thr_applicant_id;*/
+  -- Deleting
+END THR_APPLICANT_TRG
+]]></body>
+    </trigger>
+  </database>

@@ -1,0 +1,103 @@
+<?xml version="1.0"?>
+  <database name="FUNCTION THR_EM_ATTN_PROC_TRG">
+    <function name="THR_EM_ATTN_PROC_TRG" type="VARCHAR">
+      <body><![CDATA[/*************************************************************************
+    * The contents of this file are subject to the Openbravo  Public  License
+    * Version  1.1  (the  "License"),  being   the  Mozilla   Public  License
+    * Version 1.1  with a permitted attribution clause; you may not  use this
+    * file except in compliance with the License. You  may  obtain  a copy of
+    * the License at http://www.openbravo.com/legal/license.html
+    * Software distributed under the License  is  distributed  on  an "AS IS"
+    * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+    * License for the specific  language  governing  rights  and  limitations
+    * under the License.
+    * The Original Code is Openbravo ERP.
+    * The Initial Developer of the Original Code is Openbravo SLU
+    * All portions are Copyright (C) 2001-2013 Openbravo SLU
+    * All Rights Reserved.
+    * Contributor(s): Mohammad Abu Naser, Tasawr Interective.
+    ************************************************************************/ 
+	v_ResultStr VARCHAR2(2000):='';
+	v_Message VARCHAR2(2000):='';
+        v1 NUMBER:=0;
+        v2 NUMBER:=0;
+	v3 NUMBER:=0;
+        v NUMBER:=0;
+        v_att_date timestamp without time zone:=now()-1;
+	CUR_PARAMETER_EMP RECORD;
+	v_latemin NUMBER:=0;
+	v_earlymin NUMBER:=0;
+	v_comingearlymin NUMBER:=0;
+	v_earlyleftmin NUMBER:=0;
+	v_overstayingmin NUMBER:=0;
+	v_workingdays NUMBER:=0;
+	v_overtimemin NUMBER:=0;
+
+	vv_latemin VARCHAR(20);
+	vv_earlymin VARCHAR(20);
+	vv_comingearlymin VARCHAR(20);
+	vv_earlyleftmin VARCHAR(20);
+	vv_overstayingmin VARCHAR(20);
+	vv_workingdays VARCHAR(20);
+	vv_overtimemin VARCHAR(20);
+	v_att_intime timestamp without time zone;
+	v_att_outtime timestamp without time zone;
+  
+BEGIN
+    
+  IF AD_isTriggerEnabled()='N' THEN IF TG_OP = 'DELETE' THEN RETURN OLD; ELSE RETURN NEW; END IF; 
+  END IF;
+
+  IF (TG_OP = 'INSERT' OR TG_OP = 'UPDATE') THEN
+
+     FOR CUR_PARAMETER_EMP IN (select e.thr_empl_info_id, es.thr_em_sft_inf_id, es.in_time esintime,
+			    sf.from_time, sf.to_time, sf.is_partial,
+			    es.out_time esouttime,sf.grace_period,es.working_days,es.ot_hr
+			    from thr_empl_info e,thr_empl_shift es,thr_em_sft_inf sf
+			    where e.thr_empl_info_id=es.thr_empl_info_id 
+			    and es.thr_em_sft_inf_id=sf.thr_em_sft_inf_id
+			    and es.start_date=(select max(start_date) from thr_empl_shift 
+			    where thr_empl_info_id=e.thr_empl_info_id and start_date<=v_att_date)
+    )
+   loop
+    
+	select in_time, out_time into v_att_intime, v_att_outtime
+	from thr_em_attn_proc eap
+	where eap.thr_empl_info_id=CUR_PARAMETER_EMP.thr_empl_info_id
+	and eap.shift=CUR_PARAMETER_EMP.thr_em_sft_inf_id
+	and eap.attendance_date=v_att_date;
+
+	--if CUR_PARAMETER_EMP.is_partial!='Y' then
+	if to_timestamp((to_char(v_att_date,'yyyy-dd-mm')||' '||to_char(CUR_PARAMETER_EMP.esintime,'hh24:mi:ss')),'yyyy-dd-mm hh24:mi:ss')
+	          <v_att_intime then
+	vv_latemin:=to_char(to_timestamp(to_char(v_att_intime,'YYYY-MM-DD HH24:MI:SS'),'YYYY-MM-DD HH24:MI:SS')-(to_timestamp(to_char(CUR_PARAMETER_EMP.esintime,'YYYY-MM-DD HH24:MI:SS'),'YYYY-MM-DD HH24:MI:SS')),'HH24:MI:SS');
+	v_latemin:=to_number(substr(vv_latemin,1,2))*60+to_number(substr(vv_latemin,4,2));
+
+	if CUR_PARAMETER_EMP.grace_period<v_latemin then
+		v_latemin:=v_latemin;
+	else
+	v_latemin:=0;
+	end if;
+	/*ELSif (v_att_intime>CUR_PARAMETER_EMP.esintime) then
+	vv_latemin:=to_char(to_timestamp(to_char(v_att_intime,'YYYY-MM-DD HH24:MI:SS'),'YYYY-MM-DD HH24:MI:SS')-(to_timestamp(to_char(CUR_PARAMETER_EMP.esintime,'YYYY-MM-DD HH24:MI:SS'),'YYYY-MM-DD HH24:MI:SS')),'HH24:MI:SS');
+	v_latemin:=subtsr(vv_latemin,1,2)*60+subtsr(vv_latemin,4,2);*/
+	end if;
+	--end if;
+
+	update thr_em_attn_proc att set late = v_latemin
+	where att.thr_empl_info_id=CUR_PARAMETER_EMP.thr_empl_info_id
+	and att.shift=CUR_PARAMETER_EMP.thr_em_sft_inf_id
+	and att.attendance_date=v_att_date;	
+
+ -- END IF;
+  	END LOOP;
+
+   END IF;
+
+
+  -- Deleting
+IF TG_OP = 'DELETE' THEN RETURN OLD; ELSE RETURN NEW; END IF;
+END THR_EM_ATTN_PROC_TRG
+]]></body>
+    </function>
+  </database>

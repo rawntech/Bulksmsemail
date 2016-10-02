@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+  <database name="TRIGGER THR_EM_SFT_INF_TRG">
+    <trigger name="THR_EM_SFT_INF_TRG" table="THR_EM_SFT_INF" fires="before" insert="true" update="true" delete="false" foreach="row">
+      <body><![CDATA[
+  v_duration varchar(32);
+  v_starttime DATE;
+  v_endtime DATE;
+  v_overlap NUMBER:=0;
+  
+   
+BEGIN
+
+--  IF AD_isTriggerEnabled()='N' THEN IF TG_OP = 'DELETE' THEN RETURN OLD; -----ELSE RETURN NEW; END IF; 
+--  END IF;
+
+ v_starttime := :NEW.from_time;
+ v_endtime := :NEW.to_time;
+ v_overlap := 1; 
+
+IF INSERTING OR UPDATING  THEN
+
+	IF ( v_endtime > v_starttime ) THEN
+		--select age(v_endtime, v_starttime) into v_duration;
+		--Oracle compatiable
+		 select v_endtime- v_starttime into v_duration FROM dual;
+	ELSE
+		--select age(v_endtime+v_overlap, v_starttime) into v_duration;
+		--Oracle compatiable
+		 select (v_endtime+v_overlap)- v_starttime into v_duration FROM dual;
+		
+		
+	END IF;
+	
+:NEW.duration := v_duration;
+
+END IF;
+
+   
+ END THR_EM_SFT_INF_TRG
+]]></body>
+    </trigger>
+  </database>

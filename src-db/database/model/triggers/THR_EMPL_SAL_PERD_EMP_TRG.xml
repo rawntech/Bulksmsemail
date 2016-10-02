@@ -1,0 +1,67 @@
+<?xml version="1.0"?>
+  <database name="TRIGGER THR_EMPL_SAL_PERD_EMP_TRG">
+    <trigger name="THR_EMPL_SAL_PERD_EMP_TRG" table="THR_EMPL_SAL_PERD_EMP" fires="after" insert="true" update="true" delete="false" foreach="row">
+      <body><![CDATA[	
+    /*************************************************************************
+    * THE CONTENTS OF THIS FILE ARE SUBJECT TO THE OPENBRAVO  PUBLIC  LICENSE
+    * VERSION  1.1  (THE  "LICENSE"),  BEING   THE  MOZILLA   PUBLIC  LICENSE
+    * VERSION 1.1  WITH A PERMITTED ATTRIBUTION CLAUSE; YOU MAY NOT  USE THIS
+    * FILE MINUS IN COMPLIANCE WITH THE LICENSE. YOU  MAY  OBTAIN  A COPY OF
+    * THE LICENSE AT HTTP://WWW.OPENBRAVO.COM/LEGAL/LICENSE.HTML
+    * SOFTWARE DISTRIBUTED UNDER THE LICENSE  IS  DISTRIBUTED  ON  AN "AS IS"
+    * BASIS, WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED. SEE THE
+    * LICENSE FOR THE SPECIFIC  LANGUAGE  GOVERNING  RIGHTS  AND  LIMITATIONS
+    * UNDER THE LICENSE.
+    * THE ORIGINAL CODE IS OPENBRAVO ERP.
+    * THE INITIAL DEVELOPER OF THE ORIGINAL CODE IS OPENBRAVO SLU
+    * ALL PORTIONS ARE COPYRIGHT (C) 2001-2013 OPENBRAVO SLU
+    * ALL RIGHTS RESERVED.
+    * CONTRIBUTOR(S): MOHAMMAD ABU NASER & MD Abul Khayer Kazi, TASAWR INTERECTIVE.
+    ************************************************************************/ 
+   V_ISACTIVE VARCHAR(1):='Y';
+   V_TOT_EARNINGS NUMBER:=0;
+   V_TOT_DEDUCTIONS NUMBER:=0;
+   V_TOT_PAIDAMT NUMBER:=0;
+   V_TOT_LOPDAYS NUMBER:=0;
+   V_TOT_LOPAMT NUMBER:=0;
+   v_tot_otamt NUMBER:=0;
+   v_tot_loanamt NUMBER:=0;
+   v_totalearnings NUMBER:=0;
+   v_total_company_expenses NUMBER:=0;
+
+   ----------------------------------
+   
+BEGIN
+ IF AD_isTriggerEnabled()='N' THEN RETURN;
+    END IF;
+
+
+IF INSERTING  OR UPDATING THEN 
+SELECT sum(tot_earnings), sum(tot_deductions), sum(tot_paidamt), sum(tot_lopamt), sum(otamt), sum(loanamt), sum(tot_earnings+otamt), sum(company_expenses)
+INTO v_tot_earnings, v_tot_deductions, v_tot_paidamt, v_tot_lopamt, v_tot_otamt, v_tot_loanamt, v_totalearnings, v_total_company_expenses
+FROM THR_EMPL_SAL_PERD_EMP
+ WHERE thr_empl_sal_period_id=:NEW.thr_empl_sal_period_id;
+
+ 
+UPDATE thr_empl_sal_period SET 
+tot_earnings=v_tot_earnings,
+ tot_deductions=v_tot_deductions,
+  tot_paidamt=v_tot_paidamt,
+   tot_lopamt=v_tot_lopamt,
+    tot_otamt=v_tot_otamt,
+     tot_loanamt=v_tot_loanamt,
+      totalearnings  =v_totalearnings,
+      total_company_expenses=v_total_company_expenses
+      WHERE thr_empl_sal_period_id=:NEW.thr_empl_sal_period_id;
+
+END IF;
+
+IF DELETING THEN 
+RETURN OLD;
+
+END IF;
+RETURN NEW;
+END THR_EMPL_SAL_PERD_EMP_TRG
+]]></body>
+    </trigger>
+  </database>

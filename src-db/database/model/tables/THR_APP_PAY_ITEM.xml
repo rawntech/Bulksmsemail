@@ -1,0 +1,89 @@
+<?xml version="1.0"?>
+  <database name="TABLE THR_APP_PAY_ITEM">
+    <table name="THR_APP_PAY_ITEM" primaryKey="THR_APP_PAY_ITEM_KEY">
+      <column name="THR_APP_PAY_ITEM_ID" primaryKey="true" required="true" type="VARCHAR" size="32" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <column name="AD_CLIENT_ID" primaryKey="false" required="true" type="VARCHAR" size="32" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <column name="AD_ORG_ID" primaryKey="false" required="true" type="VARCHAR" size="32" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <column name="ISACTIVE" primaryKey="false" required="true" type="CHAR" size="1" autoIncrement="false">
+        <default><![CDATA[Y]]></default>
+        <onCreateDefault/>
+      </column>
+      <column name="CREATED" primaryKey="false" required="true" type="TIMESTAMP" size="7" autoIncrement="false">
+        <default><![CDATA[SYSDATE]]></default>
+        <onCreateDefault/>
+      </column>
+      <column name="CREATEDBY" primaryKey="false" required="true" type="VARCHAR" size="32" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <column name="UPDATED" primaryKey="false" required="true" type="TIMESTAMP" size="7" autoIncrement="false">
+        <default><![CDATA[SYSDATE]]></default>
+        <onCreateDefault/>
+      </column>
+      <column name="UPDATEDBY" primaryKey="false" required="true" type="VARCHAR" size="32" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <column name="THR_APP_FNL_OFFR_ID" primaryKey="false" required="true" type="VARCHAR" size="32" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <column name="THR_EMPL_PCK_SAL_ITEM_ID" primaryKey="false" required="true" type="VARCHAR" size="32" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <column name="AMTPERMONTH" primaryKey="false" required="false" type="DECIMAL" size="10,2" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <column name="TYPE" primaryKey="false" required="false" type="VARCHAR" size="60" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <column name="IS_FIXED" primaryKey="false" required="false" type="CHAR" size="1" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <column name="THR_EMPL_PAYCOMBO_ID" primaryKey="false" required="false" type="VARCHAR" size="32" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <column name="CATEGORY" primaryKey="false" required="false" type="VARCHAR" size="60" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <column name="PERCENTAGE" primaryKey="false" required="false" type="DECIMAL" size="10,2" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+      <foreign-key foreignTable="AD_CLIENT" name="THR_APP_PAY_ITEM_CLIENT">
+        <reference local="AD_CLIENT_ID" foreign="AD_CLIENT_ID"/>
+      </foreign-key>
+      <foreign-key foreignTable="THR_EMPL_PAYCOMBO" name="THR_APP_PAY_ITEM_COMBO">
+        <reference local="THR_EMPL_PAYCOMBO_ID" foreign="THR_EMPL_PAYCOMBO_ID"/>
+      </foreign-key>
+      <foreign-key foreignTable="AD_ORG" name="THR_APP_PAY_ITEM_ORG">
+        <reference local="AD_ORG_ID" foreign="AD_ORG_ID"/>
+      </foreign-key>
+      <foreign-key foreignTable="THR_APP_FNL_OFFR" name="THR_APP_PAY_ITEM_SAL">
+        <reference local="THR_APP_FNL_OFFR_ID" foreign="THR_APP_FNL_OFFR_ID"/>
+      </foreign-key>
+      <foreign-key foreignTable="THR_EMPL_PCK_SAL_ITEM" name="THR_APP_PAY_ITEM_SALITEM">
+        <reference local="THR_EMPL_PCK_SAL_ITEM_ID" foreign="THR_EMPL_PCK_SAL_ITEM_ID"/>
+      </foreign-key>
+      <unique name="THR_APP_PAY_ITEM_UNIQUE">
+        <unique-column name="THR_APP_PAY_ITEM_ID"/>
+        <unique-column name="THR_APP_FNL_OFFR_ID"/>
+      </unique>
+      <check name="THR_APP_PAY_ITEM_ACTIVE"><![CDATA[ISACTIVE IN ('Y', 'N')]]></check>
+    </table>
+  </database>

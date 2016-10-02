@@ -1,0 +1,968 @@
+<?xml version="1.0" encoding="UTF-8"  ?>
+<!-- Created with iReport - A designer for JasperReports -->
+<!DOCTYPE jasperReport PUBLIC "//JasperReports//DTD Report Design//EN" "http://jasperreports.sourceforge.net/dtds/jasperreport.dtd">
+<jasperReport
+		 name="EOSCalculationReport"
+		 columnCount="1"
+		 printOrder="Vertical"
+		 orientation="Portrait"
+		 pageWidth="595"
+		 pageHeight="842"
+		 columnWidth="535"
+		 columnSpacing="0"
+		 leftMargin="30"
+		 rightMargin="30"
+		 topMargin="20"
+		 bottomMargin="20"
+		 whenNoDataType="NoPages"
+		 isTitleNewPage="false"
+		 isSummaryNewPage="false">
+	<property name="ireport.scriptlethandling" value="0" />
+	<property name="ireport.encoding" value="UTF-8" />
+	<import value="java.util.*" />
+	<import value="net.sf.jasperreports.engine.*" />
+	<import value="net.sf.jasperreports.engine.data.*" />
+
+	<parameter name="THR_Empl_Info_ID" isForPrompting="true" class="java.lang.String"/>
+	<queryString><![CDATA[SELECT d.documentno AS "EmployeeCode", 
+d.known_as AS "Employee Name",
+d.date_of_joining AS "Joining date",l.date_of_leaving As "Lastworkingday",
+l.duration ,(l.date_of_leaving-d.date_of_joining)  As "Noofdays",e.name As "designation",s.name As department,h.grossamt,l.benefit_amount As "EOSAmount",
+round(COALESCE(thr_getamount_vacationrpt('Basic'::character varying, h.thr_empl_info_id), 0::numeric), 0) AS "Basic", 
+round(COALESCE(thr_getamount_vacationrpt('House Rent'::character varying, h.thr_empl_info_id), 0::numeric), 0) AS "Housing", 
+round(COALESCE(thr_getamount_vacationrpt('Transport Allowance'::character varying, h.thr_empl_info_id), 0::numeric), 0) AS "Trans.",
+round(COALESCE(thr_getamount_vacationrpt('Mobile Bill'::character varying, h.thr_empl_info_id), 0::numeric), 0) AS "Mobile",
+round(COALESCE(thr_getamount_vacationrpt('Other'::character varying, h.thr_empl_info_id), 0::numeric), 0) AS "Others",
+thr_vacationdetails2(l.thr_empl_info_id) as Last_Paid_Date,
+thr_vacationdetails3(l.thr_empl_info_id) as OT_Hours,
+Coalesce(thr_vacationdetails4(l.thr_empl_info_id),0) As DueLoan,
+Coalesce(thr_vacationdetails5(l.thr_empl_info_id),0) As Disiplinary,
+to_number((l.date_of_leaving-thr_vacationdetails2(l.thr_empl_info_id) )) as Working_Days_till_Date
+FROM thr_empl_salary h
+   LEFT JOIN thr_empl_info d ON h.thr_empl_info_id::text = d.thr_empl_info_id::text
+   LEFT JOIN thr_em_designation e ON d.thr_em_designation_id::text = e.thr_em_designation_id::text
+   LEFT JOIN thr_em_department s ON d.thr_em_department_id::text = s.thr_em_department_id::text   
+   JOIN thr_empl_endofservice l ON h.thr_empl_info_id::text = l.thr_empl_info_id::text 
+   and l.thr_empl_info_id = $P{THR_Empl_Info_ID}]]></queryString>
+
+	<field name="EmployeeCode" class="java.lang.String"/>
+	<field name="Employee Name" class="java.lang.String"/>
+	<field name="Joining date" class="java.sql.Timestamp"/>
+	<field name="Lastworkingday" class="java.sql.Timestamp"/>
+	<field name="duration" class="java.lang.String"/>
+	<field name="Noofdays" class="java.lang.String"/>
+	<field name="designation" class="java.lang.String"/>
+	<field name="department" class="java.lang.String"/>
+	<field name="grossamt" class="java.math.BigDecimal"/>
+	<field name="EOSAmount" class="java.math.BigDecimal"/>
+	<field name="Basic" class="java.math.BigDecimal"/>
+	<field name="Housing" class="java.math.BigDecimal"/>
+	<field name="Trans." class="java.math.BigDecimal"/>
+	<field name="Mobile" class="java.math.BigDecimal"/>
+	<field name="Others" class="java.math.BigDecimal"/>
+	<field name="last_paid_date" class="java.sql.Timestamp"/>
+	<field name="ot_hours" class="java.math.BigDecimal"/>
+	<field name="dueloan" class="java.math.BigDecimal"/>
+	<field name="disiplinary" class="java.math.BigDecimal"/>
+	<field name="working_days_till_date" class="java.math.BigDecimal"/>
+
+	<variable name="VacationAllowance" class="java.lang.Long" resetType="Report" calculation="Nothing">
+		<variableExpression><![CDATA[new Long(($F{Basic}.longValue()+$F{Housing}.longValue())/30)]]></variableExpression>
+	</variable>
+	<variable name="Salary_Till_Vacation" class="java.lang.Long" resetType="Report" calculation="Nothing">
+		<variableExpression><![CDATA[new Long($F{Basic}.longValue()/30*$F{working_days_till_date}.longValue())]]></variableExpression>
+	</variable>
+	<variable name="OT_To_be_Paid" class="java.lang.Long" resetType="Report" calculation="Nothing">
+		<variableExpression><![CDATA[new Long(($F{grossamt}.longValue()/30/8)*$F{ot_hours}.longValue()*(long)1.5)]]></variableExpression>
+	</variable>
+	<variable name="Net_To_Be_Paid" class="java.lang.Long" resetType="Report" calculation="Nothing">
+		<variableExpression><![CDATA[new Long($F{working_days_till_date}.longValue()+$F{ot_hours}.longValue()+$V{Salary_Till_Vacation}.longValue()
++$V{OT_To_be_Paid}.longValue()+$F{EOSAmount}.longValue())]]></variableExpression>
+	</variable>
+	<variable name="salary_till_vacation1" class="java.math.BigDecimal" resetType="Report" calculation="Nothing">
+		<variableExpression><![CDATA[($F{grossamt}.toString()==null ? BigDecimal.ZERO : $F{grossamt})
+.divide(new BigDecimal("30"),RoundingMode.HALF_UP)
+.multiply($F{working_days_till_date}==null ? BigDecimal.ONE : $F{working_days_till_date})]]></variableExpression>
+	</variable>
+	<variable name="OT_To_be_Paidnew" class="java.math.BigDecimal" resetType="Report" calculation="Nothing">
+		<variableExpression><![CDATA[($F{grossamt}.toString()==null ? BigDecimal.ZERO : $F{grossamt})
+.divide(new BigDecimal("30"),RoundingMode.HALF_UP)
+.divide(new BigDecimal("8"),RoundingMode.HALF_UP)
+.multiply($F{ot_hours}==null ? BigDecimal.ONE : $F{ot_hours})]]></variableExpression>
+	</variable>
+	<variable name="Net_To_Be_Paidbig" class="java.math.BigDecimal" resetType="Report" calculation="Nothing">
+		<variableExpression><![CDATA[($F{working_days_till_date}==null ? BigDecimal.ZERO : $F{working_days_till_date})
+.add($F{ot_hours}==null ? BigDecimal.ZERO : $F{ot_hours})
+.add($V{salary_till_vacation1}==null ? BigDecimal.ZERO : $V{salary_till_vacation1})
+.add($V{OT_To_be_Paidnew}==null ? BigDecimal.ZERO : $V{OT_To_be_Paidnew})
+.add($F{EOSAmount}==null ? BigDecimal.ZERO : $F{EOSAmount})
+.subtract($V{LoanAndFine}==null ? BigDecimal.ZERO : $V{LoanAndFine})]]></variableExpression>
+	</variable>
+	<variable name="LoanAndFine" class="java.math.BigDecimal" resetType="Report" calculation="Nothing">
+		<variableExpression><![CDATA[($F{dueloan}==null ? BigDecimal.ZERO : $F{dueloan})
+.add($F{disiplinary}==null ? BigDecimal.ZERO : $F{disiplinary})]]></variableExpression>
+	</variable>
+		<background>
+			<band height="0"  isSplitAllowed="true" >
+			</band>
+		</background>
+		<title>
+			<band height="50"  isSplitAllowed="true" >
+			</band>
+		</title>
+		<pageHeader>
+			<band height="50"  isSplitAllowed="true" >
+				<staticText>
+					<reportElement
+						x="125"
+						y="17"
+						width="300"
+						height="21"
+						key="staticText-1"/>
+					<box></box>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font pdfFontName="Helvetica-Bold" size="12" isBold="true"/>
+					</textElement>
+				<text><![CDATA[End of Service Calculation Report]]></text>
+				</staticText>
+			</band>
+		</pageHeader>
+		<columnHeader>
+			<band height="0"  isSplitAllowed="true" >
+			</band>
+		</columnHeader>
+		<detail>
+			<band height="400"  isSplitAllowed="true" >
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="149"
+						y="4"
+						width="240"
+						height="15"
+						key="textField"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.25" lineColor="#000000"/>
+</box>
+					<textElement verticalAlignment="Middle">
+						<font size="8"/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[$F{EmployeeCode}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="149"
+						y="19"
+						width="240"
+						height="15"
+						key="textField"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.25" lineColor="#000000"/>
+</box>
+					<textElement verticalAlignment="Middle">
+						<font size="8"/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[$F{Employee Name}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" pattern="##0.00" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="149"
+						y="170"
+						width="101"
+						height="15"
+						key="textField"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.25" lineColor="#000000"/>
+</box>
+					<textElement verticalAlignment="Middle">
+						<font size="8"/>
+					</textElement>
+				<textFieldExpression   class="java.math.BigDecimal"><![CDATA[$F{Basic}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" pattern="##0.00" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="149"
+						y="185"
+						width="101"
+						height="15"
+						key="textField"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.25" lineColor="#000000"/>
+</box>
+					<textElement verticalAlignment="Middle">
+						<font size="8"/>
+					</textElement>
+				<textFieldExpression   class="java.math.BigDecimal"><![CDATA[$F{Housing}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" pattern="##0.00" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="149"
+						y="200"
+						width="101"
+						height="15"
+						key="textField"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.25" lineColor="#000000"/>
+</box>
+					<textElement verticalAlignment="Middle">
+						<font size="8"/>
+					</textElement>
+				<textFieldExpression   class="java.math.BigDecimal"><![CDATA[$F{Trans.}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" pattern="##0.00" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="149"
+						y="215"
+						width="101"
+						height="15"
+						key="textField"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.25" lineColor="#000000"/>
+</box>
+					<textElement verticalAlignment="Middle">
+						<font size="8"/>
+					</textElement>
+				<textFieldExpression   class="java.math.BigDecimal"><![CDATA[$F{Others}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement
+						x="11"
+						y="79"
+						width="138"
+						height="15"
+						key="staticText-11"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.25" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+</box>
+					<textElement textAlignment="Left" verticalAlignment="Middle">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[  Hiring Date]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="11"
+						y="252"
+						width="138"
+						height="15"
+						key="staticText-15"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.25" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+</box>
+					<textElement textAlignment="Left" verticalAlignment="Middle">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[  Last Paid Salary Date ]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="11"
+						y="282"
+						width="138"
+						height="15"
+						key="staticText-16"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.25" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+</box>
+					<textElement textAlignment="Left" verticalAlignment="Middle">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[  OT Hours]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="11"
+						y="267"
+						width="138"
+						height="15"
+						key="staticText-17"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.25" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+</box>
+					<textElement textAlignment="Left" verticalAlignment="Middle">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[  Working Days till EOS Date]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="11"
+						y="309"
+						width="138"
+						height="15"
+						key="staticText-21"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.25" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+</box>
+					<textElement textAlignment="Left" verticalAlignment="Middle">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[  Salary Till Vacation]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="11"
+						y="324"
+						width="138"
+						height="15"
+						key="staticText-22"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.25" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+</box>
+					<textElement textAlignment="Left" verticalAlignment="Middle">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[  OT To be Paid]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="11"
+						y="339"
+						width="138"
+						height="15"
+						key="staticText-23"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.25" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+</box>
+					<textElement textAlignment="Left" verticalAlignment="Middle">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[  EOS Amount]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="11"
+						y="372"
+						width="138"
+						height="15"
+						key="staticText-24"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.25" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+</box>
+					<textElement textAlignment="Left" verticalAlignment="Middle">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[  Net To Be Paid]]></text>
+				</staticText>
+				<textField isStretchWithOverflow="false" pattern="dd/MM/yyyy" isBlankWhenNull="true" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="149"
+						y="79"
+						width="101"
+						height="15"
+						key="textField"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.25" lineColor="#000000"/>
+</box>
+					<textElement textAlignment="Left" verticalAlignment="Middle">
+						<font size="8"/>
+					</textElement>
+				<textFieldExpression   class="java.sql.Timestamp"><![CDATA[$F{Joining date}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement
+						x="11"
+						y="4"
+						width="138"
+						height="15"
+						key="staticText-30"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.25" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+</box>
+					<textElement textAlignment="Left" verticalAlignment="Middle">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[  Employee#]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="11"
+						y="19"
+						width="138"
+						height="15"
+						key="staticText-31"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.25" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+</box>
+					<textElement textAlignment="Left" verticalAlignment="Middle">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[  Employee Name]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="11"
+						y="170"
+						width="138"
+						height="15"
+						key="staticText-32"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.25" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+</box>
+					<textElement textAlignment="Left" verticalAlignment="Middle">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[  Basic Salary]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="11"
+						y="34"
+						width="138"
+						height="15"
+						key="staticText-33"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.25" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+</box>
+					<textElement textAlignment="Left" verticalAlignment="Middle">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[  Designation]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="11"
+						y="49"
+						width="138"
+						height="15"
+						key="staticText-34"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.25" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+</box>
+					<textElement textAlignment="Left" verticalAlignment="Middle">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[  Department]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="11"
+						y="64"
+						width="138"
+						height="15"
+						key="staticText-35"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.25" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+</box>
+					<textElement textAlignment="Left" verticalAlignment="Middle">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[  Reason of EOS]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="11"
+						y="111"
+						width="138"
+						height="15"
+						key="staticText-36"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.25" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+</box>
+					<textElement textAlignment="Left" verticalAlignment="Middle">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[No of days]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="11"
+						y="150"
+						width="138"
+						height="15"
+						key="staticText-37"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+</box>
+					<textElement textAlignment="Left" verticalAlignment="Middle">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[Salary:]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="11"
+						y="185"
+						width="138"
+						height="15"
+						key="staticText-38"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.25" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+</box>
+					<textElement textAlignment="Left" verticalAlignment="Middle">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[  Housing]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="11"
+						y="200"
+						width="138"
+						height="15"
+						key="staticText-39"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.25" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+</box>
+					<textElement textAlignment="Left" verticalAlignment="Middle">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[  Trans.]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="11"
+						y="215"
+						width="138"
+						height="15"
+						key="staticText-40"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.25" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+</box>
+					<textElement textAlignment="Left" verticalAlignment="Middle">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[  Training (Others)]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="11"
+						y="230"
+						width="138"
+						height="15"
+						key="staticText-41"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.25" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+</box>
+					<textElement textAlignment="Left" verticalAlignment="Middle">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[  Total]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="11"
+						y="353"
+						width="138"
+						height="15"
+						key="staticText-42"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.25" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+</box>
+					<textElement textAlignment="Left" verticalAlignment="Middle">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[  Deductions Or Loans]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="11"
+						y="126"
+						width="138"
+						height="15"
+						key="staticText-43"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.25" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+</box>
+					<textElement textAlignment="Left" verticalAlignment="Middle">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[No of years]]></text>
+				</staticText>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="149"
+						y="34"
+						width="240"
+						height="15"
+						key="textField-1"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.25" lineColor="#000000"/>
+</box>
+					<textElement verticalAlignment="Middle">
+						<font size="8"/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[$F{designation}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="149"
+						y="49"
+						width="240"
+						height="15"
+						key="textField-2"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.25" lineColor="#000000"/>
+</box>
+					<textElement verticalAlignment="Middle">
+						<font size="8"/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[$F{department}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" pattern="##0.00" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="149"
+						y="230"
+						width="101"
+						height="15"
+						key="textField"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.25" lineColor="#000000"/>
+</box>
+					<textElement verticalAlignment="Middle">
+						<font size="8"/>
+					</textElement>
+				<textFieldExpression   class="java.math.BigDecimal"><![CDATA[$F{grossamt}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="149"
+						y="126"
+						width="143"
+						height="15"
+						key="textField"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.25" lineColor="#000000"/>
+</box>
+					<textElement verticalAlignment="Middle">
+						<font size="8"/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[$F{duration}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="true" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="149"
+						y="252"
+						width="100"
+						height="15"
+						key="textField"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.25" lineColor="#000000"/>
+</box>
+					<textElement verticalAlignment="Middle">
+						<font size="8"/>
+					</textElement>
+				<textFieldExpression   class="java.sql.Timestamp"><![CDATA[$F{last_paid_date}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" pattern="##0.00" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="149"
+						y="267"
+						width="100"
+						height="15"
+						key="textField"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.25" lineColor="#000000"/>
+</box>
+					<textElement verticalAlignment="Middle">
+						<font size="8"/>
+					</textElement>
+				<textFieldExpression   class="java.math.BigDecimal"><![CDATA[$F{working_days_till_date}==null ? BigDecimal.ZERO : $F{working_days_till_date}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" pattern="##0.00" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="149"
+						y="282"
+						width="100"
+						height="15"
+						key="textField"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.25" lineColor="#000000"/>
+</box>
+					<textElement verticalAlignment="Middle">
+						<font size="8"/>
+					</textElement>
+				<textFieldExpression   class="java.math.BigDecimal"><![CDATA[$F{ot_hours}==null ? BigDecimal.ZERO : $F{ot_hours}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" pattern="##0.00" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="149"
+						y="339"
+						width="100"
+						height="15"
+						key="textField"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.25" lineColor="#000000"/>
+</box>
+					<textElement verticalAlignment="Middle">
+						<font size="8"/>
+					</textElement>
+				<textFieldExpression   class="java.math.BigDecimal"><![CDATA[$F{EOSAmount}==null ? BigDecimal.ZERO : $F{EOSAmount}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" pattern="#,##0.00" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="149"
+						y="309"
+						width="100"
+						height="15"
+						key="textField"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.25" lineColor="#000000"/>
+</box>
+					<textElement verticalAlignment="Middle">
+						<font size="8"/>
+					</textElement>
+				<textFieldExpression   class="java.math.BigDecimal"><![CDATA[$V{salary_till_vacation1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" pattern="##0.00" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="149"
+						y="353"
+						width="100"
+						height="15"
+						key="textField-3"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.25" lineColor="#000000"/>
+</box>
+					<textElement verticalAlignment="Middle">
+						<font size="8"/>
+					</textElement>
+				<textFieldExpression   class="java.math.BigDecimal"><![CDATA[$V{LoanAndFine}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="true" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="149"
+						y="111"
+						width="143"
+						height="15"
+						key="textField-4"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.25" lineColor="#000000"/>
+</box>
+					<textElement verticalAlignment="Middle">
+						<font size="8"/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[$F{Noofdays}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" pattern="#,##0.00" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="149"
+						y="324"
+						width="100"
+						height="15"
+						key="textField-5"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.25" lineColor="#000000"/>
+</box>
+					<textElement verticalAlignment="Middle">
+						<font size="8"/>
+					</textElement>
+				<textFieldExpression   class="java.math.BigDecimal"><![CDATA[$V{OT_To_be_Paidnew}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" pattern="#,##0.00" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="149"
+						y="372"
+						width="100"
+						height="15"
+						key="textField-6"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.25" lineColor="#000000"/>
+</box>
+					<textElement verticalAlignment="Middle">
+						<font size="8"/>
+					</textElement>
+				<textFieldExpression   class="java.math.BigDecimal"><![CDATA[$V{Net_To_Be_Paidbig}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement
+						x="11"
+						y="94"
+						width="138"
+						height="15"
+						key="staticText-44"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.25" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+</box>
+					<textElement textAlignment="Left" verticalAlignment="Middle">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[Last working day]]></text>
+				</staticText>
+				<textField isStretchWithOverflow="false" pattern="dd/MM/yyyy" isBlankWhenNull="true" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="149"
+						y="94"
+						width="101"
+						height="15"
+						key="textField-7"/>
+					<box>					<topPen lineWidth="0.25" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineColor="#000000"/>
+					<bottomPen lineWidth="0.25" lineColor="#000000"/>
+					<rightPen lineWidth="0.25" lineColor="#000000"/>
+</box>
+					<textElement textAlignment="Left" verticalAlignment="Middle">
+						<font size="8"/>
+					</textElement>
+				<textFieldExpression   class="java.sql.Timestamp"><![CDATA[$F{Lastworkingday}]]></textFieldExpression>
+				</textField>
+			</band>
+		</detail>
+		<columnFooter>
+			<band height="0"  isSplitAllowed="true" >
+			</band>
+		</columnFooter>
+		<pageFooter>
+			<band height="100"  isSplitAllowed="true" >
+				<staticText>
+					<reportElement
+						x="36"
+						y="7"
+						width="150"
+						height="18"
+						key="staticText-25"/>
+					<box>					<topPen lineWidth="0.5" lineColor="#000000"/>
+</box>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[Financial Controller]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="333"
+						y="7"
+						width="150"
+						height="18"
+						key="staticText-26"/>
+					<box>					<topPen lineWidth="0.5" lineColor="#000000"/>
+</box>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[Accountant]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="37"
+						y="50"
+						width="150"
+						height="18"
+						key="staticText-27"/>
+					<box>					<topPen lineWidth="0.5" lineColor="#000000"/>
+</box>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[HR Manager]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="334"
+						y="50"
+						width="150"
+						height="18"
+						key="staticText-28"/>
+					<box>					<topPen lineWidth="0.5" lineColor="#000000"/>
+</box>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[Managing Director]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="335"
+						y="82"
+						width="150"
+						height="18"
+						key="staticText-29"/>
+					<box>					<topPen lineWidth="0.5" lineColor="#000000"/>
+</box>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[Finance Director]]></text>
+				</staticText>
+			</band>
+		</pageFooter>
+		<summary>
+			<band height="0"  isSplitAllowed="true" >
+			</band>
+		</summary>
+</jasperReport>

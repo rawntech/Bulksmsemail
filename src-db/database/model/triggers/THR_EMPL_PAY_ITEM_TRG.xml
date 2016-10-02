@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+  <database name="TRIGGER THR_EMPL_PAY_ITEM_TRG">
+    <trigger name="THR_EMPL_PAY_ITEM_TRG" table="THR_APP_PAY_ITEM" fires="after" insert="true" update="true" delete="false" foreach="row">
+      <body><![CDATA[V_TOT_SUM NUMBER:=0;
+
+   
+BEGIN
+
+ IF AD_isTriggerEnabled()='N' THEN RETURN;
+  END IF;
+
+
+
+IF INSERTING OR UPDATING  THEN
+
+	/*V_TOT_SUM = Select sum(amtpermonth) 
+	from thr_app_pay_item where thr_app_fnl_offr_id=:new.thr_app_fnl_offr_id and type='Addition';*/
+
+	UPDATE thr_app_fnl_offr SET final_salary= (Select sum(amtpermonth) 
+	from thr_app_pay_item where thr_app_fnl_offr_id=:new.thr_app_fnl_offr_id and type='Addition');
+END IF;
+
+   
+ END THR_EMPL_PAY_ITEM_TRG
+]]></body>
+    </trigger>
+  </database>

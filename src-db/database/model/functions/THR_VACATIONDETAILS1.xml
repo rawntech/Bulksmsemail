@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+  <database name="FUNCTION THR_VACATIONDETAILS1">
+    <function name="THR_VACATIONDETAILS1" type="CHAR">
+      <parameter name="p_documentno" type="VARCHAR" mode="in">
+        <default/>
+      </parameter>
+      <body><![CDATA[/*************************************************************************
+* The contents of this file are subject to the Openbravo  Public  License
+* Version  1.1  (the  "License"),  being   the  Mozilla   Public  License
+* Version 1.1  with a permitted attribution clause; you may not  use this
+* file except in compliance with the License. You  may  obtain  a copy of
+* the License at http://www.openbravo.com/legal/license.html
+* Software distributed under the License  is  distributed  on  an "AS IS"
+* basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+* License for the specific  language  governing  rights  and  limitations
+* under the License.
+* The Original Code is Openbravo ERP.
+* The Initial Developer of the Original Code is Openbravo SLU
+* All portions are Copyright (C) 2001-2009 Openbravo SLU
+* All Rights Reserved.
+* Contributor(s):Mohammad Abu Naser  ______________________________________.
+************************************************************************/
+  --BEGIN
+ -- select name into v_name from hrmhyt_payallowance where hrmhyt_payallowance_id=p_allowaneid
+v_No_of_Days character varying (100);
+ BEGIN 
+ 
+
+--  Vacation Start from,  Vacation End, Vacation Applied, Accrued Vacation 
+select  trunc(l.fromdate)||' to '||trunc(l.todate) ||' ('||l.requested_days||')'
+INTO v_No_of_Days
+from  thr_em_lv_appl l,thr_empl_leave_type t
+where l.thr_empl_leave_type_id=t.thr_empl_leave_type_id
+and t.short_name='AL'
+and l.status='HRMA'
+and l.documentno<>p_documentno
+order by l.fromdate desc
+limit 1;
+
+RETURN v_No_of_Days;
+--  RAISE_APPLICATION_ERROR(-20100, v_ResultStr) ;
+END THR_VACATIONDETAILS1
+]]></body>
+    </function>
+  </database>

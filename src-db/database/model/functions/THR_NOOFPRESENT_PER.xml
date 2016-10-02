@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+  <database name="FUNCTION THR_NOOFPRESENT_PER">
+    <function name="THR_NOOFPRESENT_PER" type="NUMERIC">
+      <parameter name="p_from_date" type="TIMESTAMP" mode="in">
+        <default/>
+      </parameter>
+      <parameter name="p_to_date" type="TIMESTAMP" mode="in">
+        <default/>
+      </parameter>
+      <parameter name="p_employee_id" type="VARCHAR" mode="in">
+        <default/>
+      </parameter>
+      <body><![CDATA[/*************************************************************************
+* The contents of this file are subject to the Openbravo  Public  Licenseer
+* Version  1.1  (the  "License"),  being   the  Mozilla   Public  License
+* Version 1.1  with a permitted attribution clause; you may not  use this
+* file except in compliance with the License. You  may  obtain  a copy of
+* the License at http://www.openbravo.com/legal/license.html
+* Software distributed under the License  is  distributed  on  an "AS IS"
+* basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+* License for the specific  language  governing  rights  and  limitations
+* under the License.
+* The Original Code is Openbravo ERP.
+* The Initial Developer of the Original Code is Openbravo SLU
+* All portions are Copyright (C) 2009-2012 Openbravo SLU
+* All Rights Reserved.
+* Contributor(s):  ______________________________________.
+************************************************************************/
+  -- Logistice
+  V_NOOPRESENT NUMBER:=0;
+  V_NOOFHOLIDAYS NUMBER:=0;
+
+   
+BEGIN
+
+   SELECT sum(woking_days)  
+INTO V_NOOPRESENT
+FROM thr_em_attn_proc d
+WHERE d.thr_empl_info_id=p_employee_ID
+and d.status='P'
+AND d.attendance_date BETWEEN p_from_date AND p_TO_DATE;
+
+RETURN V_NOOPRESENT;
+EXCEPTION
+WHEN OTHERS THEN
+  NULL;
+  --RETURN;
+END THR_NOOFPRESENT_PER
+]]></body>
+    </function>
+  </database>

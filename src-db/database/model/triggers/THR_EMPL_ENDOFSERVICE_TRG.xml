@@ -1,0 +1,152 @@
+<?xml version="1.0"?>
+  <database name="TRIGGER THR_EMPL_ENDOFSERVICE_TRG">
+    <trigger name="THR_EMPL_ENDOFSERVICE_TRG" table="THR_EMPL_ENDOFSERVICE" fires="after" insert="true" update="true" delete="true" foreach="row">
+      <body><![CDATA[
+    /*************************************************************************
+    * The contents of this file are subject to the Openbravo  Public  License
+    * Version  1.1  (the  "License"),  being   the  Mozilla   Public  License
+    * Version 1.1  with a permitted attribution clause; you may not  use this
+    * file except in compliance with the License. You  may  obtain  a copy of
+    * the License at http://www.openbravo.com/legal/license.html
+    * Software distributed under the License  is  distributed  on  an "AS IS"
+    * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+    * License for the specific  language  governing  rights  and  limitations
+    * under the License.
+    * The Original Code is Openbravo ERP.
+    * The Initial Developer of the Original Code is Openbravo SLU
+    * All portions are Copyright (C) 2001-2013 Openbravo SLU
+    * All Rights Reserved.
+    * Contributor(s): Mohammad Abu Naser, Tasawr Interective.
+    ************************************************************************/ 
+  v_endofserviceline_ID VARCHAR2(32);
+  v_count NUMBER:=0;
+  v_count1 NUMBER:=0;
+  v_count9 NUMBER:=0;
+  CUR_PARAMETER_EQP RECORD;
+  v_rowcount NUMBER;
+ v_duration character varying(32);
+   
+BEGIN
+
+  IF AD_isTriggerEnabled()='N' THEN RETURN;
+  END IF;
+
+  IF (INSERTING) THEN
+
+     SELECT count(*)
+     INTO v_count
+     FROM thr_empl_endofservice
+     WHERE thr_empl_endofservice_id=:NEW.thr_empl_endofservice_id;
+     
+     IF coalesce(v_count,0)=1 THEN
+
+     select count(*) into v_count9 from thr_empl_equip where thr_empl_info_id = :new.thr_empl_info_id;
+
+     if v_count9>0 then
+	FOR CUR_PARAMETER_EQP IN (
+		select * from thr_empl_equip where thr_empl_info_id = :new.thr_empl_info_id
+		)
+		LOOP
+
+		--select * from temp
+			v_endofserviceline_ID:=get_uuid();
+
+			INSERT INTO thr_empl_endofserviceline
+			(
+			  thr_empl_endofserviceline_id ,ad_org_id ,ad_client_id ,isactive ,created ,
+			  createdby , updated ,updatedby ,
+			  thr_empl_endofservice_id ,thr_empl_info_id ,
+			  equipment_code ,equipment_name ,equipment_brand,
+			  equipment_serial,assigned_from ,assigned_to
+			)
+			VALUES 
+			(
+			   v_endofserviceline_ID,:new.ad_org_id,:new.ad_client_ID,'Y',now(),
+			   :new.CreatedBy,now(),:new.createdBy,
+			   :NEW.thr_empl_endofservice_id,CUR_PARAMETER_EQP.thr_empl_info_id,
+			   CUR_PARAMETER_EQP.equipment_code,CUR_PARAMETER_EQP.equipment_name,CUR_PARAMETER_EQP.equipment_brand,
+			   CUR_PARAMETER_EQP.equipment_serial,CUR_PARAMETER_EQP.assigned_from ,CUR_PARAMETER_EQP.assigned_to
+			);
+	
+	END LOOP;
+	else
+			v_endofserviceline_ID:=get_uuid();
+			INSERT INTO thr_empl_endofserviceline
+			(
+			  thr_empl_endofserviceline_id ,ad_org_id ,ad_client_id ,isactive ,created ,
+			  createdby , updated ,updatedby ,
+			  thr_empl_endofservice_id ,thr_empl_info_id
+			)
+			VALUES 
+			(
+			   v_endofserviceline_ID,:new.ad_org_id,:new.ad_client_ID,'Y',now(),
+			   :new.CreatedBy,now(),:new.createdBy,
+			   :NEW.thr_empl_endofservice_id,:new.thr_empl_info_id
+			);
+
+delete from thr_empl_endofserviceline where thr_empl_endofserviceline_ID =v_endofserviceline_ID;
+end if;
+		
+	Select age(date_of_leaving, date_of_joining) INTO v_duration  FROM thr_empl_endofservice 
+	where thr_empl_endofservice_id=:new.thr_empl_endofservice_id;
+
+	update  thr_empl_endofservice set duration = v_duration where 
+	thr_empl_endofservice_id=:new.thr_empl_endofservice_id;
+	
+		IF(:new.isresign='Y' and :new.approved='Y' and :new.status='HRMA')THEN
+			Update thr_empl_info set isactive ='N',status ='Resigned' where thr_empl_info_id = :new.thr_empl_info_id;
+			Update thr_empl_salary set isactive ='N' where thr_empl_info_id = :new.thr_empl_info_id;
+		ELSif(:new.isresign='N' and :new.approved='Y' and :new.status='HRMA')THEN
+		Update thr_empl_info set isactive ='N',status ='Terminated' where thr_empl_info_id = :new.thr_empl_info_id;
+		Update thr_empl_salary set isactive ='N' where thr_empl_info_id = :new.thr_empl_info_id;
+		--END IF;
+		END IF;
+	End if;
+   
+END IF;
+ 	
+/*IF  (UPDATING)  THEN
+
+Select age(date_of_leaving, date_of_joining) INTO v_duration  FROM thr_empl_endofservice 
+	where thr_empl_endofservice_id=:new.thr_empl_endofservice_id;
+
+	update  thr_empl_endofservice set duration = v_duration where 
+	thr_empl_endofservice_id=:new.thr_empl_endofservice_id;
+
+	
+	--Delete from thr_empl_endofserviceline where thr_empl_endofservice_id=new.thr_empl_endofservice_id;
+	 FOR CUR_PARAMETER_EQP IN (
+		select * from thr_empl_equip where thr_empl_info_id = :new.thr_empl_info_id
+		)
+		LOOP
+
+		
+	
+		v_endofserviceline_ID:=get_uuid();
+			INSERT INTO thr_empl_endofserviceline
+			(
+			  thr_empl_endofserviceline_id ,ad_org_id ,ad_client_id ,isactive ,created ,
+			  createdby , updated ,updatedby ,
+			  thr_empl_endofservice_id ,thr_empl_info_id ,
+			  equipment_code ,equipment_name ,equipment_brand,
+			  equipment_serial,assigned_from ,assigned_to
+			)
+			VALUES 
+			(
+			   v_endofserviceline_ID,:new.ad_org_id,:new.ad_client_ID,'Y',now(),
+			   :new.CreatedBy,now(),:new.createdBy,
+			   :NEW.thr_empl_endofservice_id,CUR_PARAMETER_EQP.thr_empl_info_id,
+			   CUR_PARAMETER_EQP.equipment_code,CUR_PARAMETER_EQP.equipment_name,CUR_PARAMETER_EQP.equipment_brand,
+			   CUR_PARAMETER_EQP.equipment_serial,CUR_PARAMETER_EQP.assigned_from ,CUR_PARAMETER_EQP.assigned_to
+			);
+	
+	END LOOP;
+	null;
+End if;*/
+	
+
+  -- Deleting
+END THR_EMPL_ENDOFSERVICE_TRG
+]]></body>
+    </trigger>
+  </database>

@@ -1,0 +1,83 @@
+<?xml version="1.0"?>
+  <database name="TRIGGER THR_EMPL_JOINING_TRG">
+    <trigger name="THR_EMPL_JOINING_TRG" table="THR_EMPL_JOINING" fires="after" insert="true" update="true" delete="false" foreach="row">
+      <body><![CDATA[
+    /*************************************************************************
+    * The contents of this file are subject to the Openbravo  Public  License
+    * Version  1.1  (the  "License"),  being   the  Mozilla   Public  License
+    * Version 1.1  with a permitted attribution clause; you may not  use this
+    * file except in compliance with the License. You  may  obtain  a copy of
+    * the License at http://www.openbravo.com/legal/license.html
+    * Software distributed under the License  is  distributed  on  an "AS IS"
+    * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+    * License for the specific  language  governing  rights  and  limitations
+    * under the License.
+    * The Original Code is Openbravo ERP.
+    * The Initial Developer of the Original Code is Openbravo SLU
+    * All portions are Copyright (C) 2001-2013 Openbravo SLU
+    * All Rights Reserved.
+    * Contributor(s): Mohammad Abu Naser, Tasawr Interective.
+    ************************************************************************/ 
+  v_count NUMBER;
+  v_email character varying(32);
+  v_phoneno character varying(32);
+  v_ad_image_id character varying(32);
+  v_thr_em_department_id character varying(32);
+  v_thr_em_designation_id character varying(32);
+  CUR_PARAMETER_APP RECORD;
+  V_JOININIG_TYPE VARCHAR(100);
+
+BEGIN
+
+  IF AD_isTriggerEnabled()='N' THEN RETURN;
+  END IF;
+
+  IF ( INSERTING OR UPDATING) THEN
+     SELECT count(*)
+     INTO v_count
+     FROM thr_empl_joining
+     WHERE thr_empl_joining_id=:NEW.thr_empl_joining_id;
+
+	
+	IF coalesce(v_count,0)=1 THEN
+	IF :new.joiningtype='New Appointment' then
+	--select * from thr_empl_info
+	  
+		/*FOR CUR_PARAMETER_APP IN (
+			select * from thr_empl_joining where thr_empl_joining_id = :new.thr_empl_joining_id
+			)
+			loop	*/ 
+			--IF  V_JOININIG_TYPE='New Appointment' OR V_JOININIG_TYPE='After vacation' OR 	
+			--V_JOININIG_TYPE='Internal Transfer' THEN
+
+				UPDATE  thr_empl_info SET ad_org_id=:new.ad_org_id, email=:new.email, phoneno=:new.phoneno, 
+				thr_em_department_id=:new.thr_em_department_id, 
+				thr_em_designation_id=:new.thr_em_designation_id, date_of_joining=:new.joiningdate
+				WHERE thr_empl_info_id=:new.thr_empl_info_id;
+
+			--Update Shift
+
+			update thr_empl_shift SET thr_em_sft_inf_id=:new.thr_em_sft_inf_id,
+			start_date=:new.joiningdate
+			WHERE thr_empl_info_id=:new.thr_empl_info_id;
+	else if :new.joiningtype !='New Appointment' then
+
+		UPDATE  thr_empl_info SET ad_org_id=:new.ad_org_id, email=:new.email, phoneno=:new.phoneno, 
+				thr_em_department_id=:new.thr_em_department_id, 
+				thr_em_designation_id=:new.thr_em_designation_id
+				WHERE thr_empl_info_id=:new.thr_empl_info_id;
+
+			--Update Shift
+
+			update thr_empl_shift SET thr_em_sft_inf_id=:new.thr_em_sft_inf_id,
+			start_date=:new.joiningdate
+			WHERE thr_empl_info_id=:new.thr_empl_info_id;
+	END IF;	
+	END IF;
+	END IF;
+END IF;
+RETURN NEW;
+END THR_EMPL_JOINING_TRG
+]]></body>
+    </trigger>
+  </database>
